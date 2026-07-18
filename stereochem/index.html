@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StereoChem — 3D стереохимия</title>
+<!-- Pinned version so a hosted site never breaks when the rolling build changes; falls back to the 3Dmol.org build if the CDN is unreachable. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.5.5/3Dmol-min.js"></script>
+<script>window.$3Dmol||document.write('<script src="https://3Dmol.org/build/3Dmol-min.js"><\/script>');</script>
+<style>
+  :root{ --bg:#0f1720; --card:#17222e; --ink:#e8eef4; --muted:#9fb2c4; --line:#243343;
+         --ok:#1f9d6b; --bad:#d1495b; --accent:#3aa0ff; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.5;font-size:16px}
+  header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;
+         align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{font-weight:700;font-size:22px;letter-spacing:.2px}
+  .brand small{display:block;font-weight:400;font-size:13px;color:var(--muted);max-width:620px}
+  .lang button{background:transparent;border:1px solid var(--line);color:var(--muted);
+       padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600;margin-left:6px;font-size:14px}
+  .lang button.active{color:var(--ink);border-color:var(--accent)}
+  main{max-width:1040px;margin:0 auto;padding:22px 20px 64px}
+  .task{background:var(--card);border:1px solid var(--line);border-radius:14px;
+        padding:16px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .task h2{margin:0 0 4px;font-size:19px}
+  .progress{color:var(--muted);font-size:14px}
+  .score{font-size:14px;color:var(--muted);white-space:nowrap}
+  .score b{color:var(--accent);font-size:18px}
+  .viewers{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:10px}
+  .vwrap{background:#fff;border:1px solid var(--line);border-radius:14px;position:relative;
+         height:360px;overflow:hidden}
+  .vwrap .tag{position:absolute;top:10px;left:12px;z-index:2;background:rgba(15,23,32,.82);
+         color:#fff;font-size:13px;padding:4px 10px;border-radius:20px}
+  .viewer{width:100%;height:100%;position:relative}
+  /* viewer control bar + element legend */
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 2px 12px}
+  .controls button{background:var(--card);border:1px solid var(--line);color:var(--ink);
+       padding:8px 13px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:600}
+  .controls button:hover{border-color:var(--accent)}
+  .controls button.on{border-color:var(--accent);color:var(--accent)}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-left:auto;color:var(--muted);font-size:13px}
+  .legend .el{display:inline-flex;align-items:center;gap:5px}
+  .legend .dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.3);display:inline-block}
+  .hint{color:var(--muted);font-size:13px;margin:2px 2px 8px}
+  .hintbox{background:#101b25;border:1px solid var(--line);border-left:3px solid var(--accent);
+       border-radius:10px;padding:12px 14px;margin:0 2px 14px;color:var(--ink);font-size:14px;display:none}
+  .hintbox.show{display:block}
+  .ask{font-weight:600;font-size:17px;margin:6px 2px 12px}
+  .choices{display:flex;gap:12px;flex-wrap:wrap}
+  .choices button{flex:1;min-width:240px;padding:16px;border-radius:12px;border:1px solid var(--line);
+       background:var(--card);color:var(--ink);font-size:16px;font-weight:600;cursor:pointer;position:relative}
+  .choices button .k{position:absolute;top:7px;left:11px;font-size:12px;color:var(--muted);font-weight:700}
+  .choices button:hover{border-color:var(--accent)}
+  .choices button:disabled{opacity:.55;cursor:default}
+  .feedback{margin-top:16px;padding:16px 18px;border-radius:12px;border:1px solid var(--line);
+       background:#101b25;display:none}
+  .feedback.show{display:block}
+  .feedback .verdict{font-weight:700;margin-bottom:6px;font-size:17px}
+  .feedback.ok .verdict{color:var(--ok)}
+  .feedback.bad .verdict{color:var(--bad)}
+  .feedback .exp{color:var(--muted);font-size:15px}
+  .next{margin-top:14px;padding:13px 22px;border-radius:12px;border:none;background:var(--accent);
+        color:#04121f;font-weight:700;cursor:pointer;font-size:16px}
+  .next[disabled]{opacity:.35;cursor:default}
+  /* end-of-quiz summary */
+  .summary{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px;text-align:center;display:none}
+  .summary.show{display:block}
+  .summary .big{font-size:44px;font-weight:800;color:var(--accent);margin:4px 0}
+  .summary .msg{color:var(--muted);font-size:15px;margin-bottom:16px}
+  footer{color:var(--muted);font-size:13px;text-align:center;padding:22px;border-top:1px solid var(--line)}
+  .err{background:var(--bad);color:#fff;padding:12px 14px;border-radius:10px;margin:16px 0;display:none}
+  .err.show{display:block}
+  /* Laptop-first. On a narrow screen it still works — just stacks. */
+  @media (max-width:760px){ .viewers{grid-template-columns:1fr} .vwrap{height:280px}
+       .choices button{min-width:0} .legend{margin-left:0} }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">StereoChem <small id="tagline"></small></div>
+  <div class="lang">
+    <button data-lang="kz" class="active">ҚАЗ</button>
+    <button data-lang="ru">РУС</button>
+  </div>
+</header>
+<main>
+  <div class="err" id="loaderr"></div>
+
+  <!-- QUIZ -->
+  <div id="quiz">
+    <div class="task">
+      <div><h2 id="molname"></h2><div class="progress" id="progress"></div></div>
+      <div class="score" id="score"></div>
+    </div>
+    <div class="viewers">
+      <div class="vwrap"><span class="tag" id="tagA"></span><div class="viewer" id="viewerA"></div></div>
+      <div class="vwrap"><span class="tag" id="tagB"></span><div class="viewer" id="viewerB"></div></div>
+    </div>
+    <div class="controls">
+      <button id="btnReset"></button>
+      <button id="btnSpin"></button>
+      <button id="btnLabels"></button>
+      <button id="btnHint"></button>
+      <span class="legend" id="legend"></span>
+    </div>
+    <div class="hint" id="hint"></div>
+    <div class="hintbox" id="hintbox"></div>
+    <div class="ask" id="ask"></div>
+    <div class="choices">
+      <button id="btnSame"><span class="k">1</span></button>
+      <button id="btnMirror"><span class="k">2</span></button>
+    </div>
+    <div class="feedback" id="feedback">
+      <div class="verdict" id="verdict"></div>
+      <div class="exp" id="exp"></div>
+    </div>
+    <button class="next" id="next" disabled></button>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary" id="summary">
+    <div class="msg" id="sumTop"></div>
+    <div class="big" id="sumScore"></div>
+    <div class="msg" id="sumMsg"></div>
+    <button class="next" id="restart"></button>
+  </div>
+</main>
+<footer id="footer"></footer>
+
+<script>
+/* StereoChem — guided 3D stereochemistry, laptop-first website.
+   One workflow: look at a molecule (A) and its mirror image (B), rotate both,
+   then predict "same molecule or a pair of enantiomers?" and check.
+   Rendering runs on the open-source 3Dmol.js library.
+
+   Molecules are placeholders chosen for a clear chiral/achiral contrast, swappable
+   for the exact syllabus molecules once the class names them:
+     - simple molecules use idealized tetrahedral coordinates (hand-computed on a
+       shared set of basis directions, so every halomethane here is geometrically
+       correct by construction),
+     - real organic molecules use an inline 3D SDF (here: 2-butanol from PubChem).
+
+   v2 essentials added: a wider molecule set (3 chiral + 3 achiral, shuffled so the
+   answers can't be memorised), 3D viewer controls (reset / auto-spin / atom labels),
+   an element colour legend that matches the render (Jmol scheme), a method hint,
+   keyboard answers (1 / 2 / Enter), and an end-of-quiz summary.
+   The verified mirror-reflection math + the original molecule data are unchanged. */
+
+const MOL = [
+  { name:{kz:'CHFClBr — бромхлорфторметан', ru:'CHFClBr — бромхлорфторметан'},
+    chiral:true,
+    atoms:[['C',0,0,0],['H',0.629,0.629,0.629],['F',0.779,-0.779,-0.779],
+           ['Cl',-1.022,1.022,-1.022],['Br',-1.120,-1.120,1.120]],
+    explain:{
+      kz:'Орталық көміртекте төрт түрлі топ (H, F, Cl, Br) — бұл хиральды орталық. B-ны қалай айналдырсаң да, A-ға беттеспейді → олар энантиомерлер (айна изомерлері).',
+      ru:'У центрального углерода четыре разные группы (H, F, Cl, Br) — это хиральный центр. Как ни поворачивай B, его нельзя совместить с A → это энантиомеры (зеркальные изомеры).'} },
+
+  { name:{kz:'CHFClI — фторхлориодметан', ru:'CHFClI — фторхлориодметан'},
+    chiral:true,
+    atoms:[['C',0,0,0],['H',0.629,0.629,0.629],['F',0.779,-0.779,-0.779],
+           ['Cl',-1.022,1.022,-1.022],['I',-1.235,-1.235,1.235]],
+    explain:{
+      kz:'Орталық көміртекте төрт түрлі атом (H, F, Cl, I) — хиральды орталық. Айна бейнесін қанша айналдырсаң да түпнұсқаға беттестіру мүмкін емес → энантиомерлер.',
+      ru:'У центрального углерода четыре разных атома (H, F, Cl, I) — хиральный центр. Зеркальное отражение, как ни вращай, нельзя совместить с оригиналом → энантиомеры.'} },
+
+  { name:{kz:'2-бутанол (CH₃CHOHCH₂CH₃)', ru:'2-бутанол (CH₃CHOHCH₂CH₃)'},
+    chiral:true,
+    sdf:`6568
+  -OEChem-07152606193D
+
+ 15 14  0     1  0  0  0  0  0999 V2000
+   -0.5179    1.3557   -0.1521 O   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.4815    0.0201    0.3432 C   0  0  2  0  0  0  0  0  0  0  0  0
+    0.7346   -0.6996   -0.2436 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.7765   -0.6826   -0.0414 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.0412    0.0064    0.0940 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.3948    0.0673    1.4346 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.7730   -1.7300    0.1282 H   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6481   -0.7459   -1.3362 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.9132   -0.6865   -1.1284 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.7906   -1.7156    0.3190 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -2.6384   -0.1552    0.3813 H   0  0  0  0  0  0  0  0  0  0  0  0
+    2.1726    0.0887    1.1775 H   0  0  0  0  0  0  0  0  0  0  0  0
+    2.0763    1.0124   -0.3355 H   0  0  0  0  0  0  0  0  0  0  0  0
+    2.8884   -0.5583   -0.3081 H   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.2869    1.7962    0.2480 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  1 15  1  0  0  0  0
+  2  3  1  0  0  0  0
+  2  4  1  0  0  0  0
+  2  6  1  0  0  0  0
+  3  5  1  0  0  0  0
+  3  7  1  0  0  0  0
+  3  8  1  0  0  0  0
+  4  9  1  0  0  0  0
+  4 10  1  0  0  0  0
+  4 11  1  0  0  0  0
+  5 12  1  0  0  0  0
+  5 13  1  0  0  0  0
+  5 14  1  0  0  0  0
+M  END`,
+    explain:{
+      kz:'Екінші көміртекте (C2) төрт түрлі топ бар: –OH, –H, –CH₃ және –C₂H₅ — бұл хиральды орталық. Сондықтан айна бейнесін түпнұсқамен беттестіру мүмкін емес → энантиомерлер. Бұл нақты органикалық молекула (галогенметан емес).',
+      ru:'У второго атома углерода (C2) четыре разные группы: –OH, –H, –CH₃ и –C₂H₅ — это хиральный центр. Поэтому зеркальное отражение нельзя совместить с оригиналом → энантиомеры. Это настоящая органическая молекула (не галогенметан).'} },
+
+  { name:{kz:'CH₂Cl₂ — дихлорметан', ru:'CH₂Cl₂ — дихлорметан'},
+    chiral:false,
+    atoms:[['C',0,0,0],['H',0.629,0.629,0.629],['H',0.629,-0.629,-0.629],
+           ['Cl',-1.022,1.022,-1.022],['Cl',-1.022,-1.022,1.022]],
+    explain:{
+      kz:'Көміртекте екі бірдей жұп (2 H және 2 Cl) бар — симметрия жазықтығы бар, сондықтан ахиральды. B-ны айналдырсаң, ол A-ға дәл беттеседі → бұл бір молекуланың өзі.',
+      ru:'У углерода две одинаковые пары (2 H и 2 Cl) — есть плоскость симметрии, значит ахиральна. Повернув B, его можно точно совместить с A → это одна и та же молекула.'} },
+
+  { name:{kz:'CHFCl₂ — дихлорфторметан', ru:'CHFCl₂ — дихлорфторметан'},
+    chiral:false,
+    atoms:[['C',0,0,0],['H',0.629,0.629,0.629],['F',0.779,-0.779,-0.779],
+           ['Cl',-1.022,1.022,-1.022],['Cl',-1.022,-1.022,1.022]],
+    explain:{
+      kz:'Атомдар әртүрлі көрінгенімен, екі Cl бірдей. Сондықтан C, H, F арқылы өтетін симметрия жазықтығы бар → ахиральды. B-ны айналдырсаң, A-ға беттеседі → бір молекула. (Мұқият болыңыз: «күрделі көрінеді» деген «хиральды» дегенді білдірмейді.)',
+      ru:'Хотя атомы выглядят разными, два атома Cl одинаковы. Поэтому есть плоскость симметрии через C, H, F → ахиральна. Повернув B, его можно совместить с A → одна и та же молекула. (Осторожно: «выглядит сложно» не значит «хиральна».)'} },
+
+  { name:{kz:'CHCl₃ — хлороформ', ru:'CHCl₃ — хлороформ'},
+    chiral:false,
+    atoms:[['C',0,0,0],['H',0.629,0.629,0.629],['Cl',1.022,-1.022,-1.022],
+           ['Cl',-1.022,1.022,-1.022],['Cl',-1.022,-1.022,1.022]],
+    explain:{
+      kz:'Көміртекте үш бірдей Cl атомы бар — симметрия осі мен жазықтығы бар, сондықтан ахиральды. Айна бейнесі түпнұсқамен беттеседі → бір молекула.',
+      ru:'У углерода три одинаковых атома Cl — есть ось и плоскость симметрии, значит ахиральна. Зеркальное отражение совпадает с оригиналом → одна и та же молекула.'} },
+];
+
+// Jmol element colours — the legend below matches what 3Dmol renders (colorscheme:'Jmol').
+const ELEM_COLOR = { C:'#909090', H:'#ffffff', O:'#ff0d0d', F:'#90e050', Cl:'#1ff01f', Br:'#a62929', I:'#940094' };
+const ELEM_NAME = {
+  kz:{C:'Көміртек (C)',H:'Сутек (H)',O:'Оттек (O)',F:'Фтор (F)',Cl:'Хлор (Cl)',Br:'Бром (Br)',I:'Иод (I)'},
+  ru:{C:'Углерод (C)',H:'Водород (H)',O:'Кислород (O)',F:'Фтор (F)',Cl:'Хлор (Cl)',Br:'Бром (Br)',I:'Иод (I)'} };
+const LEGEND_ELEMS = ['C','H','O','F','Cl','Br','I'];
+
+const T = {
+  kz:{ tagline:'3D стереохимия: бірдей молекула ма, әлде айна бейнесі ме?',
+       hint:'Тінтуірмен айналдырып, екі құрылымды салыстырыңыз. Пернелер: 1 / 2 — жауап, Enter — келесі.',
+       ask:'A мен B — бірдей молекула ма, әлде бір-бірінің айна бейнесі (энантиомерлер) ме?',
+       same:'Бірдей молекула', mirror:'Айна бейнелері (энантиомерлер)',
+       correct:'Дұрыс!', wrong:'Қате.',
+       next:'Келесі →',
+       tagA:'A — түпнұсқа', tagB:'B — айна бейнесі',
+       reset:'Көріністі қалпына келтіру', spin:'Айналдыру', labels:'Атом белгілері', hintBtn:'Кеңес',
+       hintText:'Орталық көміртекке жалғанған төрт топты санаңыз. Егер бәрі әртүрлі болса — хиральды (энантиомерлер). Егер кемінде екеуі бірдей болса — ахиральды (бір молекула).',
+       progress:(a,b)=>`Молекула ${a} / ${b}`,
+       score:s=>`Ұпай: <b>${s}</b>`,
+       sumTop:'Жаттығу аяқталды', sumScore:(s,n)=>`${s} / ${n}`,
+       sumMsg:(s,n)=>{ const p=Math.round(100*s/n); return p===100?'Мінсіз! Хиральдылықты жақсы ажыратасыз.':p>=60?`Жақсы — ${p}%. Қайталап, тұрақтандырыңыз.`:`${p}%. Кеңесті қолданып, қайта жаттығыңыз.`; },
+       restart:'Қайта бастау ↻',
+       footer:'3D визуализация ашық 3Dmol.js кітапханасында жұмыс істейді. Оқуға арналған прототип.',
+       err:'3D кітапхана жүктелмеді. Интернет байланысын тексеріп, бетті қайта жүктеңіз.' },
+  ru:{ tagline:'3D-стереохимия: одна и та же молекула или зеркальное отражение?',
+       hint:'Вращайте мышью и сравните две структуры. Клавиши: 1 / 2 — ответ, Enter — далее.',
+       ask:'A и B — это одна и та же молекула или пара зеркальных изомеров (энантиомеров)?',
+       same:'Одна и та же молекула', mirror:'Зеркальные изомеры (энантиомеры)',
+       correct:'Верно!', wrong:'Неверно.',
+       next:'Далее →',
+       tagA:'A — оригинал', tagB:'B — зеркало',
+       reset:'Сбросить вид', spin:'Вращение', labels:'Метки атомов', hintBtn:'Подсказка',
+       hintText:'Посчитайте четыре группы у центрального углерода. Если все разные — хиральна (энантиомеры). Если хотя бы две одинаковы — ахиральна (одна молекула).',
+       progress:(a,b)=>`Молекула ${a} / ${b}`,
+       score:s=>`Очки: <b>${s}</b>`,
+       sumTop:'Тренировка завершена', sumScore:(s,n)=>`${s} / ${n}`,
+       sumMsg:(s,n)=>{ const p=Math.round(100*s/n); return p===100?'Отлично! Вы уверенно различаете хиральность.':p>=60?`Хорошо — ${p}%. Повторите, чтобы закрепить.`:`${p}%. Используйте подсказку и попробуйте снова.`; },
+       restart:'Начать заново ↻',
+       footer:'3D-визуализация работает на открытой библиотеке 3Dmol.js. Учебный прототип.',
+       err:'Не удалось загрузить 3D-библиотеку. Проверьте интернет и перезагрузите страницу.' },
+};
+
+let lang='kz', idx=0, answered=false, score=0, done=false, vA=null, vB=null;
+let order=[], spinOn=false, labelsOn=false;
+const $ = id => document.getElementById(id);
+const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const cur = () => MOL[order[idx]];
+
+function xyz(atoms, mirror){                 // simple molecules: hand coordinates -> XYZ
+  let s = atoms.length + '\nStereoChem\n';
+  for(const [el,x,y,z] of atoms){
+    const X = mirror ? -x : x;               // reflection through the yz-plane = the mirror image
+    s += `${el} ${X.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)}\n`;
+  }
+  return s;
+}
+
+function mirrorSDF(sdf){                      // real molecules: reflect an SDF by negating the x column
+  const lines = sdf.split('\n');
+  const natoms = parseInt(lines[3].slice(0,3), 10);   // V2000 counts line
+  for(let i=4; i<4+natoms; i++){
+    const x = parseFloat(lines[i].slice(0,10));
+    lines[i] = (-x).toFixed(4).padStart(10) + lines[i].slice(10);
+  }
+  return lines.join('\n');
+}
+
+function molData(m, mirror){
+  if(m.sdf) return [mirror ? mirrorSDF(m.sdf) : m.sdf, 'sdf'];
+  return [xyz(m.atoms, mirror), 'xyz'];
+}
+
+function draw(){
+  if(!vA || !vB) return;
+  const m = cur();
+  for(const [v,mirror] of [[vA,false],[vB,true]]){
+    v.removeAllModels();
+    v.removeAllLabels();
+    const [data,fmt] = molData(m, mirror);
+    const model = v.addModel(data, fmt);
+    v.setStyle({}, {stick:{radius:0.14, colorscheme:'Jmol'}, sphere:{scale:0.30, colorscheme:'Jmol'}});
+    if(labelsOn){
+      model.selectedAtoms({}).forEach(a=>{
+        v.addLabel(a.elem, {position:{x:a.x,y:a.y,z:a.z}, fontSize:11, fontColor:'black',
+          backgroundColor:'white', backgroundOpacity:0.7, borderThickness:0, inFront:true});
+      });
+    }
+    v.zoomTo();
+    v.spin(spinOn ? 'y' : false);
+    v.render();
+  }
+}
+
+function renderLegend(){
+  $('legend').innerHTML = LEGEND_ELEMS.map(e=>
+    `<span class="el"><span class="dot" style="background:${ELEM_COLOR[e]}"></span>${ELEM_NAME[lang][e]}</span>`
+  ).join('');
+}
+
+function renderStatic(){
+  const t = T[lang];
+  $('tagline').textContent = t.tagline;
+  $('hint').textContent    = t.hint;
+  $('ask').textContent     = t.ask;
+  $('btnSame').innerHTML   = `<span class="k">1</span>${t.same}`;
+  $('btnMirror').innerHTML = `<span class="k">2</span>${t.mirror}`;
+  $('tagA').textContent    = t.tagA;
+  $('tagB').textContent    = t.tagB;
+  $('btnReset').textContent  = '↺ ' + t.reset;
+  $('btnSpin').textContent   = t.spin;
+  $('btnLabels').textContent = t.labels;
+  $('btnHint').textContent   = '? ' + t.hintBtn;
+  $('hintbox').textContent   = t.hintText;
+  $('footer').textContent  = t.footer;
+  $('next').textContent    = t.next;
+  $('restart').textContent = t.restart;
+  $('btnSpin').classList.toggle('on', spinOn);
+  $('btnLabels').classList.toggle('on', labelsOn);
+  renderLegend();
+}
+
+function renderCard(){
+  const t = T[lang], m = cur();
+  $('molname').textContent  = m.name[lang];
+  $('progress').textContent = t.progress(idx+1, MOL.length);
+  $('score').innerHTML      = t.score(score);
+  if(answered){                    // keep an already-checked card in sync on a language switch
+    const ok = $('feedback').classList.contains('ok');
+    $('verdict').textContent = ok ? t.correct : t.wrong;
+    $('exp').textContent     = m.explain[lang];
+  }
+}
+
+function resetCard(){
+  answered = false;
+  $('feedback').className = 'feedback';
+  $('verdict').textContent = '';
+  $('exp').textContent = '';
+  $('btnSame').disabled = false;
+  $('btnMirror').disabled = false;
+  $('next').disabled = true;
+  $('hintbox').classList.remove('show');
+}
+
+function answer(choice){                      // choice: 'same' | 'mirror'
+  if(answered || done) return;
+  answered = true;
+  const t = T[lang], m = cur();
+  const ok = (choice === (m.chiral ? 'mirror' : 'same'));
+  if(ok) score++;
+  $('feedback').className = 'feedback show ' + (ok ? 'ok' : 'bad');
+  $('verdict').textContent = ok ? t.correct : t.wrong;
+  $('exp').textContent     = m.explain[lang];
+  $('btnSame').disabled = true;
+  $('btnMirror').disabled = true;
+  $('next').disabled = false;
+  renderCard();
+}
+
+function showSummary(){
+  const t = T[lang];
+  done = true;
+  $('quiz').style.display = 'none';
+  $('summary').classList.add('show');
+  $('sumTop').textContent   = t.sumTop;
+  $('sumScore').textContent = t.sumScore(score, MOL.length);
+  $('sumMsg').textContent   = t.sumMsg(score, MOL.length);
+}
+
+function next(){
+  if(answered && idx < MOL.length - 1){ idx++; resetCard(); renderCard(); draw(); }
+  else if(answered){ showSummary(); }
+}
+
+function restart(){
+  idx=0; score=0; done=false;
+  order = shuffle([...Array(MOL.length).keys()]);
+  $('summary').classList.remove('show');
+  $('quiz').style.display = '';
+  resetCard(); renderStatic(); renderCard(); draw();
+}
+
+function setLang(l){
+  lang = l;
+  for(const b of document.querySelectorAll('.lang button'))
+    b.classList.toggle('active', b.dataset.lang === l);
+  document.documentElement.lang = (l === 'kz' ? 'kk' : 'ru');
+  renderStatic(); renderCard();
+  if(done){ $('sumTop').textContent=T[lang].sumTop; $('sumMsg').textContent=T[lang].sumMsg(score,MOL.length); }
+}
+
+function toggleSpin(){ spinOn=!spinOn; $('btnSpin').classList.toggle('on', spinOn);
+  [vA,vB].forEach(v=>{ if(v){ v.spin(spinOn?'y':false); v.render(); } }); }
+function toggleLabels(){ labelsOn=!labelsOn; $('btnLabels').classList.toggle('on', labelsOn); draw(); }
+function resetView(){ [vA,vB].forEach(v=>{ if(v){ v.zoomTo(); v.render(); } }); }
+
+function init(){
+  order = shuffle([...Array(MOL.length).keys()]);
+  document.querySelectorAll('.lang button').forEach(b =>
+    b.addEventListener('click', () => setLang(b.dataset.lang)));
+  $('btnSame').addEventListener('click', () => answer('same'));
+  $('btnMirror').addEventListener('click', () => answer('mirror'));
+  $('next').addEventListener('click', next);
+  $('restart').addEventListener('click', restart);
+  $('btnReset').addEventListener('click', resetView);
+  $('btnSpin').addEventListener('click', toggleSpin);
+  $('btnLabels').addEventListener('click', toggleLabels);
+  $('btnHint').addEventListener('click', () => $('hintbox').classList.toggle('show'));
+  window.addEventListener('keydown', e=>{
+    if(done) { if(e.key==='Enter') restart(); return; }
+    if(e.key==='1') answer('same');
+    else if(e.key==='2') answer('mirror');
+    else if(e.key==='Enter' && !$('next').disabled) next();
+  });
+
+  renderStatic(); renderCard();
+
+  if(typeof $3Dmol === 'undefined'){
+    const e = $('loaderr'); e.textContent = T[lang].err; e.classList.add('show');
+    return;
+  }
+  vA = $3Dmol.createViewer($('viewerA'), {backgroundColor:'white'});
+  vB = $3Dmol.createViewer($('viewerB'), {backgroundColor:'white'});
+  draw();
+}
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

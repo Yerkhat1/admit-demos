@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SplitSecond — шешім қабылдау зертханасы</title>
+<style>
+  :root{ --bg:#0f1720; --card:#17222e; --ink:#e8eef4; --muted:#9fb2c4; --line:#243343;
+         --ok:#30a46c; --bad:#e5484d; --accent:#3aa0ff;
+         --red:#e5484d; --blue:#3aa0ff; --green:#30a46c; --yellow:#f5d90a; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+       background:var(--bg);color:var(--ink);line-height:1.5;font-size:16px}
+  header{padding:18px 28px;border-bottom:1px solid var(--line);display:flex;
+         align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{font-weight:700;font-size:22px;letter-spacing:.2px}
+  .brand small{display:block;font-weight:400;font-size:13px;color:var(--muted);max-width:640px}
+  .lang button{background:transparent;border:1px solid var(--line);color:var(--muted);
+       padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600;margin-left:6px;font-size:14px}
+  .lang button.active{color:var(--ink);border-color:var(--accent)}
+  body[data-screen="task"] .lang{visibility:hidden}      /* keep language stable mid-run */
+  main{max-width:920px;margin:0 auto;padding:26px 20px 64px}
+  .screen{display:none}
+  body[data-screen="intro"]   #intro,
+  body[data-screen="task"]    #task,
+  body[data-screen="results"] #results{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 24px;margin-bottom:18px}
+  h2{margin:0 0 10px;font-size:22px}
+  .lead{color:var(--muted);font-size:15px;margin:0 0 8px}
+  ul.how{color:var(--ink);font-size:15px;margin:10px 0 0;padding-left:20px}
+  ul.how li{margin:6px 0}
+  .btn{padding:15px 26px;border-radius:12px;border:none;background:var(--accent);
+       color:#04121f;font-weight:700;cursor:pointer;font-size:17px}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btnrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;align-items:center}
+  /* Setup controls on the intro */
+  .setup{margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+  .setup .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0}
+  .setup .label{color:var(--muted);font-size:14px;min-width:104px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{background:transparent;border:none;color:var(--muted);padding:9px 16px;
+       cursor:pointer;font-weight:600;font-size:14px;border-right:1px solid var(--line)}
+  .seg button:last-child{border-right:none}
+  .seg button.active{background:var(--accent);color:#04121f}
+  .check{display:inline-flex;align-items:center;gap:9px;cursor:pointer;color:var(--ink);font-size:15px;user-select:none}
+  .check input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+  /* Task */
+  .pbar{height:8px;background:#101b25;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-bottom:10px}
+  .pbar-fill{height:100%;width:0;background:var(--accent);transition:width .2s}
+  .progress{color:var(--muted);font-size:14px;margin-bottom:12px;text-align:center}
+  .progress .badge{display:inline-block;background:#2a3a1c;color:#bfe08a;border:1px solid #3c5227;
+       border-radius:99px;padding:1px 10px;font-size:12px;font-weight:700;margin-left:8px}
+  .stage{height:230px;display:flex;align-items:center;justify-content:center;
+         background:#fff;border-radius:16px;border:1px solid var(--line);margin-bottom:18px}
+  .word{font-size:72px;font-weight:800;letter-spacing:1px}
+  .fix{font-size:52px;color:#9aa4ad;font-weight:700}
+  .count{font-size:88px;font-weight:800;color:#0f1720}
+  .stage.flash-ok{box-shadow:inset 0 0 0 5px var(--ok)}
+  .stage.flash-bad{box-shadow:inset 0 0 0 5px var(--bad)}
+  .answers{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .answers button{height:84px;border-radius:14px;border:3px solid rgba(255,255,255,.15);
+       cursor:pointer;position:relative;font-weight:800;font-size:20px;color:rgba(0,0,0,.55)}
+  .answers button:disabled{cursor:default}
+  .answers button .k{position:absolute;top:6px;left:10px;font-size:13px;color:rgba(0,0,0,.5)}
+  .quit{display:block;margin:16px auto 0;background:transparent;border:none;color:var(--muted);
+       cursor:pointer;font-size:13px;text-decoration:underline}
+  /* Results */
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:6px 0 4px}
+  @media (max-width:640px){ .metrics{grid-template-columns:1fr} .answers{grid-template-columns:repeat(2,1fr)}
+       .setup .label{min-width:0} }
+  .metric{background:#101b25;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}
+  .metric .v{font-size:30px;font-weight:800}
+  .metric .l{color:var(--muted);font-size:13px;margin-top:4px}
+  .metric.head{border-color:#2a4a63}
+  .metric.head .v{color:var(--accent)}
+  /* Conflict-cost bars: how much longer the conflict trials took */
+  .bars{margin:18px 0 4px}
+  .bars .row{display:grid;grid-template-columns:96px 1fr 62px;align-items:center;gap:10px;margin:8px 0}
+  .bars .name{color:var(--muted);font-size:13px;text-align:right}
+  .bars .track{background:#101b25;border:1px solid var(--line);border-radius:8px;height:20px;overflow:hidden}
+  .bars .fill{display:block;height:100%;border-radius:7px;min-width:2px}
+  .bars .fill.con{background:var(--green)}
+  .bars .fill.inc{background:var(--red)}
+  .bars .val{font-size:13px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .interp{color:var(--muted);font-size:15px;margin-top:14px}
+  .interp b{color:var(--ink)}
+  .note{color:var(--muted);font-size:12px;margin-top:10px}
+  /* Attempt history */
+  .hist{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+  .hist h3{font-size:15px;margin:0 0 8px;color:var(--ink)}
+  .hist table{width:100%;border-collapse:collapse;font-size:14px}
+  .hist th{color:var(--muted);font-weight:600;text-align:left;padding:5px 8px;font-size:12px}
+  .hist td{padding:5px 8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+  .hist td.best{color:var(--accent);font-weight:700}
+  .hist .clear{background:transparent;border:none;color:var(--muted);cursor:pointer;
+       font-size:12px;text-decoration:underline;margin-top:8px;padding:0}
+  footer{color:var(--muted);font-size:13px;text-align:center;padding:22px;border-top:1px solid var(--line)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#101b25;
+         border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:10px;
+         font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body data-screen="intro">
+<header>
+  <div class="brand">SplitSecond <small id="tagline"></small></div>
+  <div class="lang">
+    <button data-lang="kz" class="active">ҚАЗ</button>
+    <button data-lang="ru">РУС</button>
+  </div>
+</header>
+<main>
+  <!-- INTRO -->
+  <section id="intro" class="screen">
+    <div class="card">
+      <h2 id="introTitle"></h2>
+      <p class="lead" id="hook"></p>
+      <ul class="how" id="how"></ul>
+
+      <div class="setup">
+        <div class="row">
+          <span class="label" id="lenLabel"></span>
+          <div class="seg" id="lenSeg">
+            <button data-n="10"></button>
+            <button data-n="20" class="active"></button>
+            <button data-n="30"></button>
+          </div>
+        </div>
+        <div class="row">
+          <label class="check"><input type="checkbox" id="practiceChk" checked><span id="practiceLabel"></span></label>
+        </div>
+      </div>
+
+      <div class="btnrow"><button class="btn" id="start"></button></div>
+    </div>
+  </section>
+
+  <!-- TASK -->
+  <section id="task" class="screen">
+    <div class="pbar"><div class="pbar-fill" id="pfill"></div></div>
+    <div class="progress" id="progress"></div>
+    <div class="stage" id="stage"><span class="fix">+</span></div>
+    <div class="answers" id="answers"></div>
+    <button class="quit" id="quit"></button>
+  </section>
+
+  <!-- RESULTS -->
+  <section id="results" class="screen">
+    <div class="card">
+      <h2 id="resTitle"></h2>
+      <div class="metrics">
+        <div class="metric head"><div class="v" id="mStroop">—</div><div class="l" id="lStroop"></div></div>
+        <div class="metric"><div class="v" id="mRT">—</div><div class="l" id="lRT"></div></div>
+        <div class="metric"><div class="v" id="mAcc">—</div><div class="l" id="lAcc"></div></div>
+      </div>
+
+      <div class="bars" id="bars">
+        <div class="row"><span class="name" id="nCon"></span>
+          <span class="track"><span class="fill con" id="barCon"></span></span>
+          <span class="val" id="vCon">—</span></div>
+        <div class="row"><span class="name" id="nInc"></span>
+          <span class="track"><span class="fill inc" id="barInc"></span></span>
+          <span class="val" id="vInc">—</span></div>
+      </div>
+
+      <div class="interp" id="interp"></div>
+      <div class="note" id="detail"></div>
+      <div class="note" id="best"></div>
+
+      <div class="hist" id="hist" style="display:none">
+        <h3 id="histTitle"></h3>
+        <table><thead><tr>
+          <th id="hDate"></th><th id="hCost"></th><th id="hAcc"></th><th id="hLen"></th>
+        </tr></thead><tbody id="histBody"></tbody></table>
+        <button class="clear" id="clearHist"></button>
+      </div>
+
+      <div class="btnrow">
+        <button class="btn" id="again"></button>
+        <button class="btn ghost" id="share"></button>
+      </div>
+    </div>
+  </section>
+</main>
+<footer id="footer"></footer>
+<div class="toast" id="toast"></div>
+
+<script>
+/* SplitSecond — a decision-science game (candidate 2 for Alikhan's tech project).
+   Based on the classic Stroop task (J.R. Stroop, 1935) and the speed-accuracy tradeoff.
+   Show a colour WORD printed in a coloured ink; the player picks the INK colour, fast.
+   We measure reaction time + accuracy, and the "conflict cost" (Stroop effect =
+   incongruent RT - congruent RT) — a real, personal measure of how much conflict slows you.
+   Pure HTML/CSS/JS, no libraries — nothing to load, works offline once opened.
+   Educational game, NOT a clinical or diagnostic test.
+
+   v2 essentials added: a warm-up (practice) block so reaction times aren't polluted by
+   learning the controls; a session-length choice (10/20/30); a live progress bar; a full
+   results breakdown (congruent vs incongruent RT + errors, not just the single number);
+   and a local attempt-history log. The verified trial engine + results math are unchanged. */
+
+const COLORS = [
+  {key:'red',    hex:'#e5484d', kz:'ҚЫЗЫЛ',  ru:'КРАСНЫЙ'},
+  {key:'blue',   hex:'#3aa0ff', kz:'КӨК',    ru:'СИНИЙ'},
+  {key:'green',  hex:'#30a46c', kz:'ЖАСЫЛ',  ru:'ЗЕЛЁНЫЙ'},
+  {key:'yellow', hex:'#f5d90a', kz:'САРЫ',   ru:'ЖЁЛТЫЙ'},
+];
+let N_TRIALS = 20;             // chosen on the intro (10 / 20 / 30), always split 50/50
+const PRACTICE_N = 4;          // unscored warm-up trials
+const FIXATION = 500, FEEDBACK = 250, ITI = 300, TIMEOUT = 3000;
+const HIST_KEY = 'ss_history', HIST_MAX = 8;
+
+const T = {
+  kz:{ tagline:'Қысым астында қалай шешім қабылдайсыз? Струп тесті негізінде.',
+       introTitle:'Ойынға дайынсыз ба?',
+       hook:'Мен сағаттап ойланатын адаммын — сондықтан миы бір сәтте қалай шешім қабылдайтыны маған қызық. Бұл сол сәтті өлшейтін шағын зертхана.',
+       how:['Сөз түрлі түспен жазылады (мысалы, «ҚЫЗЫЛ» көк түспен).',
+            'Сөздің МАҒЫНАСЫН емес, ЖАЗЫЛҒАН ТҮСІН таңдаңыз.',
+            'Мүмкіндігінше жылдам, бірақ қатесіз. 1–4 пернелерін де қолдануға болады.'],
+       lenLabel:'Ұзақтығы', practiceLabel:'Алдымен қысқа жаттығу (есеп жүрмейді)',
+       start:'Бастау →',
+       practiceBadge:'жаттығу', getReady:'Дайын болыңыз…',
+       progress:(a,b)=>`Сынақ ${a} / ${b}`,
+       quit:'Тоқтату',
+       resTitle:'Сіздің шешім бейнеңіз',
+       lStroop:'Қайшылық құны (Струп эффектісі)', lRT:'Орташа уақыт', lAcc:'Дәлдік',
+       nCon:'Сәйкес', nInc:'Қайшы',
+       interp:(s,rt,acc)=>`<b>Қайшылық құны ${s} мс</b> — мағына мен түс сәйкес келмегенде миыңызға қайшылықты шешуге кеткен қосымша уақыт (Дж. Струп, 1935). Дәлдік <b>${acc}%</b>, орташа уақыт <b>${rt} мс</b> — бұл сіздің «жылдамдық–дәлдік» қисығындағы нүктеңіз: жылдамырақ кетсеңіз, қателер көбейеді.`,
+       detail:(con,inc,err)=>`Сәйкес сөздер: ${con} мс · қайшы сөздер: ${inc} мс · қателер: ${err}`,
+       best:v=>`Ең үздік қайшылық құныңыз: ${v} мс`,
+       histTitle:'Соңғы нәтижелер', hDate:'Күні', hCost:'Қайшылық құны', hAcc:'Дәлдік', hLen:'Сынақ',
+       clearHist:'Тарихты тазарту', cleared:'Тарих тазартылды',
+       again:'Қайта ойнау', share:'Нәтижені көшіру',
+       shareText:(s,rt,acc)=>`SplitSecond: қайшылық құным ${s} мс, орташа уақыт ${rt} мс, дәлдік ${acc}%.`,
+       copied:'Нәтиже көшірілді',
+       footer:'Струп тесті (1935) мен «жылдамдық–дәлдік» принципіне негізделген оқу ойыны. Медициналық тест емес. Кітапханасыз таза веб-технология.',
+       miss:'—' },
+  ru:{ tagline:'Как вы решаете под давлением? На основе теста Струпа.',
+       introTitle:'Готовы сыграть?',
+       hook:'Я из тех, кто обдумывает решение часами — поэтому мне интересно, как мозг решает за долю секунды. Это маленькая лаборатория, которая измеряет тот самый момент.',
+       how:['Слово написано цветом (например, «КРАСНЫЙ» синим).',
+            'Выбирайте ЦВЕТ, которым написано слово, а не его ЗНАЧЕНИЕ.',
+            'Как можно быстрее, но без ошибок. Можно нажимать клавиши 1–4.'],
+       lenLabel:'Длительность', practiceLabel:'Сначала короткая разминка (не засчитывается)',
+       start:'Начать →',
+       practiceBadge:'разминка', getReady:'Приготовьтесь…',
+       progress:(a,b)=>`Проба ${a} / ${b}`,
+       quit:'Остановить',
+       resTitle:'Ваш профиль решений',
+       lStroop:'Цена конфликта (эффект Струпа)', lRT:'Среднее время', lAcc:'Точность',
+       nCon:'Совпадает', nInc:'Конфликт',
+       interp:(s,rt,acc)=>`<b>Цена конфликта ${s} мс</b> — лишнее время на разрешение конфликта, когда значение и цвет не совпадают (Дж. Струп, 1935). Точность <b>${acc}%</b> при среднем времени <b>${rt} мс</b> — это ваша точка на кривой «скорость–точность»: чем быстрее, тем больше ошибок.`,
+       detail:(con,inc,err)=>`Совпадающие слова: ${con} мс · конфликтные: ${inc} мс · ошибки: ${err}`,
+       best:v=>`Ваша лучшая цена конфликта: ${v} мс`,
+       histTitle:'Последние попытки', hDate:'Дата', hCost:'Цена конфликта', hAcc:'Точность', hLen:'Проб',
+       clearHist:'Очистить историю', cleared:'История очищена',
+       again:'Играть снова', share:'Скопировать результат',
+       shareText:(s,rt,acc)=>`SplitSecond: моя цена конфликта ${s} мс, среднее время ${rt} мс, точность ${acc}%.`,
+       copied:'Результат скопирован',
+       footer:'Обучающая игра на основе теста Струпа (1935) и принципа «скорость–точность». Не медицинский тест. Чистая веб-технология без библиотек.',
+       miss:'—' },
+};
+
+let lang='kz', trials=[], idx=0, results=[], accepting=false, onset=0, timer=null;
+let mode='real';               // 'practice' | 'real'
+let doPractice=true;
+const $ = id => document.getElementById(id);
+const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
+const shuffle = a => { for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+
+function buildTrials(n){
+  const list = [];
+  for(let i=0;i<n;i++){
+    const word = COLORS[i % COLORS.length];               // balanced words
+    let ink;
+    if(i < n/2){ ink = word; }                            // half congruent
+    else { const others = COLORS.filter(c=>c.key!==word.key); ink = others[Math.floor(Math.random()*others.length)]; } // half incongruent
+    list.push({word, ink, congruent: word.key===ink.key});
+  }
+  return shuffle(list);
+}
+
+function renderAnswers(){
+  const box = $('answers'); box.innerHTML='';
+  COLORS.forEach((c,i)=>{
+    const b = document.createElement('button');
+    b.style.background = c.hex;
+    b.innerHTML = `<span class="k">${i+1}</span>`;
+    b.setAttribute('aria-label', c[lang]);
+    b.onclick = ()=>respond(c.key);
+    box.appendChild(b);
+  });
+}
+
+/* Start: run a practice block first (if chosen), then the real block. */
+function startTask(){
+  document.body.dataset.screen='task';
+  renderAnswers();
+  if(doPractice) runBlock('practice', PRACTICE_N, ()=>countdown(()=>runBlock('real', N_TRIALS, showResults)));
+  else countdown(()=>runBlock('real', N_TRIALS, showResults));
+}
+
+let blockDone=null;
+function runBlock(m, n, onDone){
+  mode=m; trials=buildTrials(n); idx=0; results=[]; blockDone=onDone;
+  nextTrial();
+}
+
+/* 3-2-1 countdown between practice and the scored block. */
+function countdown(done){
+  const stage=$('stage'); $('progress').innerHTML=''; $('pfill').style.width='0%';
+  accepting=false;
+  let n=3;
+  const tick=()=>{
+    if(n===0){ stage.className='stage'; stage.innerHTML='<span class="fix">+</span>'; return done(); }
+    stage.className='stage'; stage.innerHTML=`<span class="count">${n}</span>`;
+    n--; setTimeout(tick, 620);
+  };
+  $('progress').textContent=T[lang].getReady; tick();
+}
+
+function updateProgress(){
+  const t=T[lang];
+  const badge = mode==='practice' ? ` <span class="badge">${t.practiceBadge}</span>` : '';
+  $('progress').innerHTML = t.progress(idx+1, trials.length) + badge;
+  $('pfill').style.width = (100*idx/trials.length) + '%';
+}
+
+function nextTrial(){
+  if(idx >= trials.length){ $('pfill').style.width='100%'; return blockDone(); }
+  updateProgress();
+  const stage = $('stage');
+  stage.className='stage';
+  stage.innerHTML = '<span class="fix">+</span>';        // fixation
+  accepting=false;
+  setTimeout(()=>{
+    const t = trials[idx];
+    stage.innerHTML = `<span class="word" style="color:${t.ink.hex}">${t.word[lang]}</span>`;
+    accepting=true; onset=performance.now();
+    clearTimeout(timer);
+    timer=setTimeout(()=>respond(null), TIMEOUT);         // missed trial
+  }, FIXATION);
+}
+
+function respond(colorKey){
+  if(!accepting) return;
+  accepting=false; clearTimeout(timer);
+  const t = trials[idx];
+  const rt = Math.round(performance.now()-onset);
+  const correct = colorKey===t.ink.key;
+  results.push({rt, correct, congruent:t.congruent, timeout:colorKey===null});   // practice results are simply discarded on next runBlock
+  const stage=$('stage');
+  stage.classList.add(correct ? 'flash-ok' : 'flash-bad');
+  idx++;
+  setTimeout(()=>{ stage.className='stage'; setTimeout(nextTrial, ITI); }, FEEDBACK);
+}
+
+function computeStats(res){
+  const correct = res.filter(r=>r.correct);
+  const acc = Math.round(100*correct.length/res.length);
+  const meanRT = correct.length ? Math.round(avg(correct.map(r=>r.rt))) : 0;
+  const con = correct.filter(r=>r.congruent).map(r=>r.rt);
+  const inc = correct.filter(r=>!r.congruent).map(r=>r.rt);
+  const conRT = con.length ? Math.round(avg(con)) : null;
+  const incRT = inc.length ? Math.round(avg(inc)) : null;
+  const stroop = (con.length && inc.length) ? Math.round(avg(inc)-avg(con)) : null;
+  const errors = res.length - correct.length;
+  return {acc, meanRT, conRT, incRT, stroop, errors};
+}
+
+let lastStats=null;              // last result set, so a language toggle can repaint it
+function showResults(){
+  document.body.dataset.screen='results';
+  const s = computeStats(results);
+  lastStats = s;
+  // write personal best ONCE (positive costs only)
+  try{
+    if(s.stroop!==null && s.stroop>0){
+      const prev = parseInt(localStorage.getItem('ss_best')||'0',10);
+      const best = (!prev || s.stroop<prev) ? s.stroop : prev;
+      localStorage.setItem('ss_best', String(best));
+    }
+  }catch(e){}
+  saveHistory(s);                // append to history ONCE
+  paintResults(s);
+  renderHistory();
+}
+
+// Repaintable (also called on a language toggle while results are shown) — no writes here.
+function paintResults(s){
+  const t=T[lang];
+  $('mStroop').textContent = s.stroop===null ? t.miss : s.stroop+' ms';
+  $('mRT').textContent = s.meanRT+' ms';
+  $('mAcc').textContent = s.acc+'%';
+  $('interp').innerHTML = t.interp(s.stroop===null?'—':s.stroop, s.meanRT, s.acc);
+  $('detail').textContent = t.detail(s.conRT??'—', s.incRT??'—', s.errors);
+
+  // conflict-cost bars (scaled to the slower of the two conditions)
+  const maxRT = Math.max(s.conRT||0, s.incRT||0) || 1;
+  $('barCon').style.width = s.conRT ? (100*s.conRT/maxRT)+'%' : '0';
+  $('barInc').style.width = s.incRT ? (100*s.incRT/maxRT)+'%' : '0';
+  $('vCon').textContent = s.conRT ? s.conRT+' ms' : t.miss;
+  $('vInc').textContent = s.incRT ? s.incRT+' ms' : t.miss;
+
+  let bestTxt='';
+  try{ const best = parseInt(localStorage.getItem('ss_best')||'0',10); if(best>0) bestTxt = t.best(best); }catch(e){}
+  $('best').textContent = bestTxt;
+
+  $('share').onclick = ()=>{
+    const txt = t.shareText(s.stroop===null?'—':s.stroop, s.meanRT, s.acc);
+    navigator.clipboard?.writeText(txt).then(toast(t.copied), ()=>{});
+  };
+}
+
+/* ---- attempt history (localStorage, newest first, capped) ---- */
+function loadHistory(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); }catch(e){ return []; } }
+function saveHistory(s){
+  try{
+    const h = loadHistory();
+    const d = new Date();
+    const date = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}`;
+    h.unshift({date, cost:s.stroop, acc:s.acc, n:results.length});
+    localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, HIST_MAX)));
+  }catch(e){}
+}
+function renderHistory(){
+  const t=T[lang], h=loadHistory();
+  if(!h.length){ $('hist').style.display='none'; return; }
+  $('hist').style.display='block';
+  const best = Math.min(...h.filter(r=>r.cost!=null).map(r=>r.cost));
+  $('histBody').innerHTML = h.map(r=>{
+    const isBest = r.cost!=null && r.cost===best;
+    const cost = r.cost==null ? t.miss : r.cost+' ms';
+    return `<tr><td>${r.date}</td><td class="${isBest?'best':''}">${cost}</td><td>${r.acc}%</td><td>${r.n}</td></tr>`;
+  }).join('');
+}
+
+function toast(msg){ return ()=>{ const el=$('toast'); el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1500); }; }
+
+function renderStatic(){
+  const t=T[lang];
+  $('tagline').textContent=t.tagline;
+  $('introTitle').textContent=t.introTitle;
+  $('hook').textContent=t.hook;
+  $('how').innerHTML = t.how.map(li=>`<li>${li}</li>`).join('');
+  $('lenLabel').textContent=t.lenLabel;
+  $('practiceLabel').textContent=t.practiceLabel;
+  $('start').textContent=t.start;
+  $('quit').textContent=t.quit;
+  $('resTitle').textContent=t.resTitle;
+  $('lStroop').textContent=t.lStroop; $('lRT').textContent=t.lRT; $('lAcc').textContent=t.lAcc;
+  $('nCon').textContent=t.nCon; $('nInc').textContent=t.nInc;
+  $('histTitle').textContent=t.histTitle;
+  $('hDate').textContent=t.hDate; $('hCost').textContent=t.hCost; $('hAcc').textContent=t.hAcc; $('hLen').textContent=t.hLen;
+  $('clearHist').textContent=t.clearHist;
+  $('again').textContent=t.again; $('share').textContent=t.share;
+  $('footer').textContent=t.footer;
+}
+
+function setLang(l){
+  if(document.body.dataset.screen==='task') return;   // don't switch mid-run
+  lang=l;
+  for(const b of document.querySelectorAll('.lang button')) b.classList.toggle('active', b.dataset.lang===l);
+  document.documentElement.lang = (l==='kz'?'kk':'ru');
+  renderStatic();
+  if(document.body.dataset.screen==='results'){                  // re-translate a shown result set
+    if(lastStats) paintResults(lastStats);
+    renderHistory();
+  }
+}
+
+// intro controls
+document.querySelectorAll('#lenSeg button').forEach(b=> b.addEventListener('click', ()=>{
+  N_TRIALS = parseInt(b.dataset.n,10);
+  document.querySelectorAll('#lenSeg button').forEach(x=>x.classList.toggle('active', x===b));
+}));
+$('practiceChk').addEventListener('change', e=>{ doPractice = e.target.checked; });
+$('lenSeg').querySelectorAll('button').forEach(b=>{ b.textContent = b.dataset.n; });
+
+document.querySelectorAll('.lang button').forEach(b=> b.addEventListener('click', ()=>setLang(b.dataset.lang)));
+$('start').addEventListener('click', startTask);
+$('again').addEventListener('click', ()=>{ document.body.dataset.screen='intro'; });
+$('quit').addEventListener('click', ()=>{ clearTimeout(timer); accepting=false; document.body.dataset.screen='intro'; });
+$('clearHist').addEventListener('click', ()=>{ try{ localStorage.removeItem(HIST_KEY);}catch(e){} renderHistory(); toast(T[lang].cleared)(); });
+window.addEventListener('keydown', e=>{
+  if(document.body.dataset.screen==='task' && ['1','2','3','4'].includes(e.key))
+    respond(COLORS[+e.key-1].key);
+});
+
+renderStatic();
+</script>
+</body>
+</html>
