@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Upstream — The Aral Sea Machine</title>
+<style>
+  :root{
+    --bg:#060a10; --bg2:#0a1017; --panel:rgba(255,255,255,.045); --panel2:#0f1823;
+    --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.18);
+    --ink:#eef4f8; --ts:#aebccb; --tm:#728296;
+    --water:#38bdf8; --water2:#5eead4; --sand:#a9793f; --salt:#e9e2cf; --rust:#b4531f;
+    --power:#f6b93b; --crop:#54cf7c; --sea:#3aa9e0; --bad:#ef4444; --gold:#ffcf5a; --accent:#5eead4;
+    --grad-accent:linear-gradient(135deg,#7df0dc,#31c4e6 60%,#2f7fe0);
+    --grad-gold:linear-gradient(135deg,#ffe08a,#f6b93b);
+    --r:20px; --shadow:0 24px 60px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+    color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;
+    min-height:100vh;padding:0 16px calc(46px + env(safe-area-inset-bottom));
+    background:
+      radial-gradient(1000px 560px at 84% -10%, rgba(56,189,248,.14), transparent 60%),
+      radial-gradient(820px 560px at -4% 6%, rgba(180,83,31,.12), transparent 55%),
+      radial-gradient(700px 700px at 50% 116%, rgba(94,234,212,.08), transparent 55%),
+      linear-gradient(180deg,var(--bg),var(--bg2) 55%,#060b11);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1120px;margin:0 auto}
+  .num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+  /* ---------- top bar ---------- */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:26px 4px 10px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:13px}
+  .glyph{width:44px;height:44px;border-radius:13px;flex:none;
+    background:conic-gradient(from 200deg,#5eead4,#38bdf8,#0e7490,#b4531f,#5eead4);
+    box-shadow:0 8px 22px rgba(56,189,248,.4);position:relative}
+  .glyph::after{content:"";position:absolute;inset:6px;border-radius:9px;background:var(--bg);}
+  .glyph::before{content:"";position:absolute;inset:13px;border-radius:50%;background:linear-gradient(180deg,#5eead4,#38bdf8);z-index:1}
+  .bname{font-size:23px;font-weight:800;letter-spacing:-.02em;line-height:1;
+    background:linear-gradient(90deg,#fff,#cdeef0 60%,#a9d5ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .btag{font-size:11.5px;color:var(--tm);letter-spacing:.02em;margin-top:4px}
+  .chip{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--accent);
+    border:1px solid var(--line2);border-radius:100px;padding:8px 14px;background:rgba(94,234,212,.07)}
+
+  /* ---------- panels ---------- */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    box-shadow:var(--shadow);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);position:relative;overflow:hidden}
+  .panel.pad{padding:20px}
+  .ptitle{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--tm);font-weight:700}
+
+  /* ---------- cockpit ---------- */
+  .cockpit{display:grid;grid-template-columns:1fr;gap:16px;margin-top:14px}
+  @media(min-width:880px){ .cockpit{grid-template-columns:1.05fr .95fr;align-items:stretch} }
+
+  /* sea stage */
+  .sea{padding:0;display:flex;flex-direction:column;min-height:400px}
+  .sea .hud{position:absolute;inset:14px 16px auto;display:flex;justify-content:space-between;align-items:flex-start;z-index:3;pointer-events:none}
+  .sea .satlbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8fb6cc;opacity:.85}
+  .sea .yearbox{text-align:right}
+  .sea .yearbox .yr{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:.9;color:#eaf6ff;text-shadow:0 2px 16px rgba(0,0,0,.6)}
+  .sea .yearbox .yl{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8fb6cc}
+  .stage-svg{flex:1;width:100%;height:100%;display:block;
+    background:radial-gradient(120% 90% at 60% 26%,#0e1c27,#070d13 78%)}
+  .basinlbl{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;fill:#bcd3e0;opacity:.55;font-weight:700}
+  .sea .caption{position:absolute;left:16px;right:16px;bottom:14px;z-index:3;
+    font-size:12.5px;color:var(--ts);text-align:center;text-shadow:0 1px 8px rgba(0,0,0,.7);pointer-events:none}
+  .sea .caption b{color:#fff}
+  .grain{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.5;
+    background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.012) 3px 4px)}
+  .mileflag{position:absolute;z-index:3;left:16px;top:64px;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+  .mileflag .m{font-size:10.5px;color:#ffe6a8;background:rgba(246,185,59,.12);border:1px solid rgba(246,185,59,.3);
+    border-radius:8px;padding:3px 9px;opacity:0;transform:translateX(-6px);transition:.3s}
+  .mileflag .m.on{opacity:1;transform:none}
+
+  /* control deck */
+  .deck{display:flex;flex-direction:column;gap:16px}
+  .deck .presets{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .preset{cursor:pointer;text-align:left;border:1px solid var(--line);border-radius:13px;padding:11px 12px;
+    background:rgba(255,255,255,.02);color:var(--ink);transition:.15s;font-family:inherit}
+  .preset:hover{border-color:var(--line2);transform:translateY(-1px)}
+  .preset.on{border-color:var(--accent);background:rgba(94,234,212,.09);box-shadow:0 0 0 1px var(--accent) inset}
+  .preset.real{grid-column:1/-1;background:linear-gradient(100deg,rgba(246,185,59,.1),rgba(255,255,255,.02))}
+  .preset.real.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}
+  .preset .pt{font-weight:700;font-size:13px}
+  .preset .pt .badge{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#ffdd8f;margin-left:7px;
+    border:1px solid rgba(246,185,59,.4);border-radius:20px;padding:1px 7px}
+  .preset .pd{font-size:11px;color:var(--tm);line-height:1.3;margin-top:2px}
+
+  .ctrl{margin-top:2px}
+  .ctrl .head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+  .ctrl .name{font-weight:600;font-size:14px}
+  .ctrl .name em{font-style:normal;color:var(--tm);font-weight:400;font-size:11.5px;display:block;margin-top:1px}
+  .ctrl .out{font-weight:800;font-size:17px;color:var(--accent);white-space:nowrap}
+  .ctrl .out small{font-size:11px;color:var(--tm);font-weight:600}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;
+    background:linear-gradient(90deg,var(--water2),var(--water) var(--f,50%),rgba(255,255,255,.09) var(--f,50%));cursor:pointer;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:#fff;border:3px solid var(--water);box-shadow:0 2px 8px rgba(0,0,0,.5)}
+  input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--water)}
+  .ends{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tm);margin-top:5px}
+  .runrow{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
+  button.run{flex:1;min-width:150px;cursor:pointer;font-family:inherit;font-weight:800;font-size:15px;color:#042028;
+    background:var(--grad-accent);border:none;border-radius:13px;padding:14px;
+    box-shadow:0 12px 28px rgba(49,196,230,.34);transition:.15s}
+  button.run:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(49,196,230,.46)}
+  button.run:active{transform:translateY(0) scale(.99)}
+  button.ghost{cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;color:var(--ts);
+    background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:13px;padding:14px 15px;transition:.15s}
+  button.ghost:hover{border-color:var(--line2);color:var(--ink)}
+
+  /* ---------- score hero ---------- */
+  .scorewrap{display:grid;grid-template-columns:1fr;gap:16px;margin-top:16px}
+  @media(min-width:640px){ .scorewrap{grid-template-columns:auto 1fr;align-items:center} }
+  .scorecard{padding:18px 22px;display:flex;align-items:center;gap:18px;
+    background:linear-gradient(135deg,rgba(94,234,212,.1),rgba(56,189,248,.04))}
+  .ring{--p:0;width:96px;height:96px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;
+    background:conic-gradient(var(--accent) calc(var(--p)*1%), rgba(255,255,255,.08) 0)}
+  .ring::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#0b131c}
+  .ring .rv{position:relative;z-index:1;text-align:center}
+  .ring .rv b{font-size:30px;font-weight:800;letter-spacing:-.03em}
+  .ring .rv span{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--tm);margin-top:1px}
+  .scoremeta .sname{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--tm);font-weight:700}
+  .scoremeta .stitle{font-size:20px;font-weight:800;margin:3px 0 4px;letter-spacing:-.01em}
+  .scoremeta .sdesc{font-size:13px;color:var(--ts);max-width:520px}
+  .subscores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:2px}
+  .ss{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:13px;padding:12px 13px}
+  .ss .l{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tm);font-weight:700;display:flex;align-items:center;gap:6px}
+  .ss .l i{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .ss .v{font-size:22px;font-weight:800;margin-top:6px}
+  .ss .bar{height:5px;border-radius:5px;background:rgba(255,255,255,.08);margin-top:9px;overflow:hidden}
+  .ss .bar i{display:block;height:100%;width:0;border-radius:5px;transition:width .5s}
+
+  /* ---------- gauges ---------- */
+  .gauges{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:16px}
+  @media(min-width:640px){ .gauges{grid-template-columns:repeat(4,1fr)} }
+  .g{padding:15px 15px 13px}
+  .g .gl{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--tm);font-weight:700}
+  .g .gd{width:7px;height:7px;border-radius:50%}
+  .g .gv{font-size:29px;font-weight:800;letter-spacing:-.02em;margin-top:9px;line-height:1}
+  .g .gv small{font-size:12px;font-weight:600;color:var(--ts);letter-spacing:0;margin-left:2px}
+  .g .track{height:5px;border-radius:5px;background:rgba(255,255,255,.08);margin-top:12px;overflow:hidden}
+  .g .fillbar{height:100%;border-radius:5px;width:0;transition:width .3s ease}
+  .g .gs{font-size:11px;color:var(--tm);margin-top:8px;min-height:15px}
+
+  /* ---------- scrubber ---------- */
+  .scrub{margin-top:16px;padding:16px 20px;display:none}
+  .scrub.on{display:block}
+  .scrub .sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .scrub .sh .t{font-size:12.5px;font-weight:700}
+  .scrub .sh .yv{font-weight:800;color:var(--accent);font-size:15px}
+  .scrub .playrow{display:flex;gap:10px;align-items:center}
+  .scrub input[type=range]{flex:1}
+  .scrub button.mini{cursor:pointer;font-family:inherit;font-weight:800;font-size:13px;color:#042028;
+    background:var(--grad-accent);border:none;border-radius:10px;padding:9px 14px;white-space:nowrap}
+
+  /* ---------- charts ---------- */
+  .charts{display:grid;grid-template-columns:1fr;gap:14px;margin-top:16px}
+  @media(min-width:720px){ .charts{grid-template-columns:1fr 1fr 1fr} }
+  .cbox .ct{font-size:12.5px;font-weight:700;color:var(--ink)}
+  .cbox .cu{font-size:10.5px;color:var(--tm);margin:2px 0 10px}
+  .cbox .cu .gm{color:var(--gold);font-weight:700}
+  canvas{width:100%;height:auto;display:block}
+
+  /* ---------- verdict + explain ---------- */
+  .full{margin-top:16px}
+  .vhead{font-size:16px;font-weight:700;color:var(--ink);margin:12px 0 14px}
+  .vgrid{display:grid;grid-template-columns:1fr;gap:11px}
+  @media(min-width:640px){ .vgrid{grid-template-columns:1fr 1fr} }
+  .vline{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;color:var(--ts)}
+  .vline .ic{flex:none;width:8px;height:8px;border-radius:50%;margin-top:6px}
+  details.exp{margin-top:16px}
+  details.exp summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;
+    font-size:13px;font-weight:700;color:var(--accent);user-select:none}
+  details.exp summary::-webkit-details-marker{display:none}
+  details.exp summary::before{content:"▸";transition:.2s;display:inline-block}
+  details.exp[open] summary::before{transform:rotate(90deg)}
+  .eqwrap{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
+  @media(min-width:640px){ .eqwrap{grid-template-columns:1fr 1fr} }
+  .eq{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
+  .eq .f{font-size:19px;font-weight:800;letter-spacing:.01em;margin-bottom:6px}
+  .eq .f .op{color:var(--accent)}
+  .eq .d{font-size:12.5px;color:var(--tm);line-height:1.5}
+  .eq .d b{color:var(--ts)}
+  .honest{font-size:11.5px;color:var(--tm);margin-top:14px;line-height:1.5;
+    border-left:2px solid rgba(180,83,31,.5);padding-left:11px}
+  .honest b{color:var(--rust)}
+  .srcline{font-size:10.5px;color:var(--tm);margin-top:8px}
+  .srcline b{color:var(--ts)}
+  footer{text-align:center;color:var(--tm);font-size:11.5px;padding:24px 0 6px}
+  footer b{color:var(--ts)}
+
+  .rise{opacity:0;transform:translateY(12px);animation:rise .55s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  @keyframes shimmer{0%,100%{opacity:.85}50%{opacity:1}}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(15,24,35,.95);
+    border:1px solid var(--line2);color:var(--ink);padding:11px 18px;border-radius:100px;font-size:13px;font-weight:600;
+    opacity:0;transition:.2s;pointer-events:none;z-index:20;backdrop-filter:blur(10px)}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- TOP -->
+  <div class="top rise">
+    <div class="brand">
+      <div class="glyph"></div>
+      <div>
+        <div class="bname">Upstream</div>
+        <div class="btag">The Aral Sea machine · a physics &amp; chemistry model of Central Asia's water</div>
+      </div>
+    </div>
+    <div class="chip">Aral Basin · Systems Lab</div>
+  </div>
+
+  <!-- COCKPIT -->
+  <div class="cockpit">
+
+    <!-- SEA STAGE -->
+    <section class="panel sea rise" aria-label="Aral Sea">
+      <div class="grain"></div>
+      <div class="hud">
+        <div class="satlbl">◎ Satellite · Aral Sea basin</div>
+        <div class="yearbox"><div class="yr num" id="yrNow">1960</div><div class="yl">simulated year</div></div>
+      </div>
+      <div class="mileflag" id="mileflag"></div>
+      <svg class="stage-svg" id="stage" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <defs>
+          <radialGradient id="seabed" cx="42%" cy="52%" r="72%">
+            <stop offset="0%" stop-color="#8a6636"/><stop offset="55%" stop-color="#bda06d"/>
+            <stop offset="100%" stop-color="#e9dfc6"/>
+          </radialGradient>
+          <linearGradient id="wgrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#7ef0e0"/><stop offset="60%" stop-color="#39b9ef"/><stop offset="100%" stop-color="#1f7fb8"/>
+          </linearGradient>
+          <filter id="soft"><feGaussianBlur stdDeviation="1.1"/></filter>
+        </defs>
+
+        <!-- dead seabed (full 1960 extent) -->
+        <path id="bedN" d="M150,44 C186,42 210,60 207,80 C204,99 176,105 150,103 C126,101 110,92 110,74 C110,55 128,46 150,44 Z"
+          fill="url(#seabed)" opacity=".92"/>
+        <path id="bedS" d="M140,116 C176,113 232,122 238,168 C243,208 226,236 228,272 C230,308 202,336 168,340 C149,342 130,333 118,314 C107,296 111,274 99,260 C80,241 95,214 91,190 C87,166 100,138 120,128 C126,120 132,117 140,116 Z"
+          fill="url(#seabed)" opacity=".92"/>
+        <!-- ghost 1960 shoreline -->
+        <path d="M150,44 C186,42 210,60 207,80 C204,99 176,105 150,103 C126,101 110,92 110,74 C110,55 128,46 150,44 Z"
+          fill="none" stroke="#cfe3ef" stroke-width="1.2" stroke-dasharray="4 5" opacity=".5"/>
+        <path d="M140,116 C176,113 232,122 238,168 C243,208 226,236 228,272 C230,308 202,336 168,340 C149,342 130,333 118,314 C107,296 111,274 99,260 C80,241 95,214 91,190 C87,166 100,138 120,128 C126,120 132,117 140,116 Z"
+          fill="none" stroke="#cfe3ef" stroke-width="1.2" stroke-dasharray="4 5" opacity=".5"/>
+
+        <!-- retreating water: North Aral -->
+        <g id="waterNG">
+          <path id="waterN" d="M150,44 C186,42 210,60 207,80 C204,99 176,105 150,103 C126,101 110,92 110,74 C110,55 128,46 150,44 Z" fill="url(#wgrad)"/>
+        </g>
+        <!-- retreating water: South Aral (retreats toward the deep western basin) -->
+        <g id="waterSG">
+          <path id="waterS" d="M140,116 C176,113 232,122 238,168 C243,208 226,236 228,272 C230,308 202,336 168,340 C149,342 130,333 118,314 C107,296 111,274 99,260 C80,241 95,214 91,190 C87,166 100,138 120,128 C126,120 132,117 140,116 Z"
+            fill="url(#wgrad)" style="animation:shimmer 4s ease-in-out infinite"/>
+          <ellipse id="wglow" cx="112" cy="215" rx="34" ry="46" fill="#ffffff" opacity=".1" filter="url(#soft)"/>
+        </g>
+        <text class="basinlbl" x="150" y="76" text-anchor="middle">North Aral</text>
+        <text class="basinlbl" x="150" y="232" text-anchor="middle">South Aral</text>
+      </svg>
+      <div class="caption" id="caption">Set a policy and press run. The dashed line is the sea's 1960 shore.</div>
+    </section>
+
+    <!-- CONTROL DECK -->
+    <section class="deck">
+      <div class="panel pad rise">
+        <div class="ptitle">Your policy</div>
+        <div class="presets" id="presets"></div>
+      </div>
+
+      <div class="panel pad rise">
+        <div class="ctrl">
+          <div class="head">
+            <div class="name">Irrigation withdrawal<em>water pulled to the cotton fields</em></div>
+            <div class="out"><span id="virr">70</span> <small>km³/yr</small></div>
+          </div>
+          <input type="range" id="irr" min="0" max="110" step="5" value="70">
+          <div class="ends"><span>sea first</span><span>fields first</span></div>
+        </div>
+        <div class="ctrl" style="margin-top:18px">
+          <div class="head">
+            <div class="name">Winter power share<em>released in winter for hydro, not held for summer crops</em></div>
+            <div class="out"><span id="vwin">40</span> <small>%</small></div>
+          </div>
+          <input type="range" id="win" min="0" max="100" step="5" value="40">
+          <div class="ends"><span>summer irrigation</span><span>winter power</span></div>
+        </div>
+        <div class="ctrl" style="margin-top:18px">
+          <div class="head">
+            <div class="name">Years to simulate</div>
+            <div class="out"><span id="vyrs">50</span> <small>yr</small></div>
+          </div>
+          <input type="range" id="yrs" min="10" max="60" step="5" value="50">
+          <div class="ends"><span>10</span><span>60</span></div>
+        </div>
+        <div class="runrow">
+          <button class="run" id="runBtn">▶ Run the years</button>
+          <button class="ghost" id="saveBtn">Save</button>
+          <button class="ghost" id="csvBtn">CSV</button>
+          <button class="ghost" id="shareBtn">Card</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- SCORE HERO -->
+  <div class="scorewrap">
+    <div class="panel scorecard rise">
+      <div class="ring" id="ring"><div class="rv"><b id="scoreV">—</b><span>score</span></div></div>
+      <div class="scoremeta">
+        <div class="sname">Basin steward score</div>
+        <div class="stitle" id="scoreTitle">Run a policy</div>
+        <div class="sdesc" id="scoreDesc">Balance three things at once: keep the sea alive, keep the lights on, feed the country. Beating the real history (which scored low) is the challenge.</div>
+      </div>
+    </div>
+    <div class="subscores">
+      <div class="ss"><div class="l"><i style="background:var(--sea)"></i>Living sea</div><div class="v" id="ssSea">—</div><div class="bar"><i id="ssSeaB" style="background:var(--sea)"></i></div></div>
+      <div class="ss"><div class="l"><i style="background:var(--power)"></i>Power</div><div class="v" id="ssPow">—</div><div class="bar"><i id="ssPowB" style="background:var(--power)"></i></div></div>
+      <div class="ss"><div class="l"><i style="background:var(--crop)"></i>Food</div><div class="v" id="ssCrop">—</div><div class="bar"><i id="ssCropB" style="background:var(--crop)"></i></div></div>
+    </div>
+  </div>
+
+  <!-- GAUGES -->
+  <div class="gauges">
+    <div class="panel g rise"><div class="gl"><span class="gd" style="background:var(--power)"></span>Winter power</div>
+      <div class="gv" id="gPower" style="color:var(--power)">—</div>
+      <div class="track"><div class="fillbar" id="fPower" style="background:var(--power)"></div></div>
+      <div class="gs" id="sPower">TWh / year</div></div>
+    <div class="panel g rise"><div class="gl"><span class="gd" style="background:var(--crop)"></span>Crop yield</div>
+      <div class="gv" id="gCrop" style="color:var(--crop)">—</div>
+      <div class="track"><div class="fillbar" id="fCrop" style="background:var(--crop)"></div></div>
+      <div class="gs" id="sCrop">Mt cotton / year</div></div>
+    <div class="panel g rise"><div class="gl"><span class="gd" style="background:var(--sea)"></span>Sea level</div>
+      <div class="gv" id="gLevel" style="color:var(--sea)">—</div>
+      <div class="track"><div class="fillbar" id="fLevel" style="background:var(--sea)"></div></div>
+      <div class="gs" id="sLevel">metres</div></div>
+    <div class="panel g rise"><div class="gl"><span class="gd" id="dSalt" style="background:var(--crop)"></span>Salinity</div>
+      <div class="gv" id="gSalt">—</div>
+      <div class="track"><div class="fillbar" id="fSalt"></div></div>
+      <div class="gs" id="sSalt">grams / litre</div></div>
+  </div>
+
+  <!-- SCRUBBER -->
+  <section class="panel scrub rise" id="scrub">
+    <div class="sh"><div class="t">Scrub through the years</div><div class="yv"><span id="scrYr">—</span></div></div>
+    <div class="playrow">
+      <button class="mini" id="playBtn">▶ Play</button>
+      <input type="range" id="scrub-range" min="0" max="50" step="1" value="50">
+    </div>
+  </section>
+
+  <!-- CHARTS -->
+  <div class="charts">
+    <div class="panel pad cbox rise"><div class="ct">Water left in the sea</div>
+      <div class="cu">km³ · started ~1064 in 1960 · <span class="gm">● measured</span></div>
+      <canvas id="cVol" width="440" height="200"></canvas></div>
+    <div class="panel pad cbox rise"><div class="ct">Sea area</div>
+      <div class="cu">1000 km² · <span class="gm">● measured</span></div>
+      <canvas id="cArea" width="440" height="200"></canvas></div>
+    <div class="panel pad cbox rise"><div class="ct">How salty it became</div>
+      <div class="cu">g/L · fishery dies past ~24 · <span class="gm">● measured</span></div>
+      <canvas id="cSal" width="440" height="200"></canvas></div>
+  </div>
+
+  <!-- VERDICT -->
+  <section class="panel pad full rise">
+    <div class="ptitle">What your policy did</div>
+    <div class="vhead" id="vHead">Run the model to see the verdict.</div>
+    <div class="vgrid" id="vGrid"></div>
+
+    <details class="exp">
+      <summary>The physics &amp; chemistry inside</summary>
+      <div class="eqwrap">
+        <div class="eq"><div class="f">E <span class="op">=</span> ρ·g·h·η·V</div>
+          <div class="d"><b style="color:var(--power)">Hydro-electricity — physics.</b> Energy from falling water: density × gravity × dam head × turbine efficiency × the volume released. Release more in winter → more power, but that water never reaches the summer fields.</div></div>
+        <div class="eq"><div class="f">C <span class="op">=</span> M / V</div>
+          <div class="d"><b style="color:var(--rust)">Salinity — chemistry.</b> Concentration = dissolved-salt mass ÷ water volume. Evaporation and irrigation remove fresh <i>water</i>; the <i>salt stays</i>. As the sea shrinks, C climbs — how the Aral went from ~10 g/L to over 70, and the fish died.</div></div>
+      </div>
+      <div class="honest"><b>Honest note.</b> Upstream is an educational systems model on realistic, published-order numbers — it shows how the tradeoffs are shaped, it is not a validated forecast of any real year.</div>
+      <div class="srcline">Measured points &amp; milestones from published Aral Sea figures (area, volume, salinity 1960–2010; 1987 N/S split; 2005 Kok-Aral dam; 2014 eastern basin dried). <b>Source: Wikipedia — Aral Sea / North Aral Sea.</b></div>
+    </details>
+  </section>
+
+  <footer><b>Upstream</b> · built around the real Aral Sea coastline · Central Asia's water, as a machine you can run</footer>
+</div>
+<div class="toast" id="toast"></div>
+<canvas id="cardCanvas" width="1080" height="1080" style="display:none"></canvas>
+
+<script>
+/* ===== coupled water / energy / salinity model (verified core) ===== */
+const P={V0:1064,A0:68000,L0:53,Lmin:25,C0:10,inflow:110,evapRate:1.0,riverSalt:1.0,losses:0.10,kPower:367.9,cropCoef:0.12};
+function seeded(n){let x=Math.sin(n*127.1+31.7)*43758.5453;return x-Math.floor(x);}
+function simulate(irrigation,winterShare,years,opts={}){
+  const s=[];let V=P.V0,M=P.C0*P.V0*1e12;
+  const ramp=opts.irrRamp||null;              // real-history mode ramps irrigation over time
+  for(let y=0;y<=years;y++){
+    const area=P.A0*Math.pow(Math.max(V,0)/P.V0,0.65);
+    const level=P.Lmin+(P.L0-P.Lmin)*Math.sqrt(Math.max(V,0)/P.V0);
+    const salinity=M/(Math.max(V,1)*1e12);
+    s.push({y,V:Math.max(V,0),area,level,salinity});
+    if(y===years)break;
+    const irrY = ramp ? ramp(y,years) : irrigation;
+    const I=P.inflow*(0.92+0.16*seeded(y+1)),R=I;
+    const Rw=winterShare*R,Rs=(1-winterShare)*R;
+    const delivered=Math.min(irrY,Rs),lossVol=P.losses*R;
+    const toSea=Math.max(0,R-delivered-lossVol);
+    const evap=(opts.evapRate||P.evapRate)*area*1e-3;
+    let Vn=Math.min(Math.max(V+toSea-evap,0.002*P.V0),P.V0*1.03);
+    M+=toSea*1e12*P.riverSalt;V=Vn;
+    const r=s[s.length-1];
+    r.power=P.kPower*Rw/1000;r.crop=delivered*P.cropCoef;r.toSea=toSea;r.delivered=delivered;r.demand=irrY;
+  }
+  const last=s[s.length-1],prev=s[s.length-2]||{};
+  ['power','crop','demand','delivered','toSea'].forEach(k=>last[k]=prev[k]);
+  return s;
+}
+/* ===== basin-steward score (0-100) ===== */
+function scoreOf(f){                 // f = final state
+  const sea = f.salinity<=24 ? 100 : f.salinity>=90 ? 0 : Math.round(100*(90-f.salinity)/(90-24));
+  const pow = Math.max(0,Math.min(100,Math.round(100*(f.power||0)/26)));
+  const crop = Math.max(0,Math.min(100,Math.round(100*(f.crop||0)/9)));
+  const total = Math.round(0.45*sea + 0.25*pow + 0.30*crop);
+  let title,desc;
+  if(sea>70&&pow>45&&crop>45){title='Master steward';desc='You held all three at once — a living sea, real power, and fed fields. Almost nobody does this.';}
+  else if(sea<=10){title='The road that emptied the Aral';desc='This is essentially what really happened: everything to cotton, the sea abandoned.';}
+  else if(sea>70&&(crop<35||pow<25)){title='Sea saved, something sacrificed';desc='The sea lives — but food or power paid the bill. Real policy is this tradeoff.';}
+  else if(crop>60&&sea<40){title='A working country, a dying sea';desc='The classic Central Asian bind: full fields, a shrinking sea behind them.';}
+  else {title='A mixed hand';desc='A middle path — no catastrophe, no triumph. Try to push one lever without breaking another.';}
+  return {sea,pow,crop,total,title,desc};
+}
+/* ===== measured real data (published Aral figures; y = year-1960) ===== */
+const MEAS={
+  V:  [{y:0,v:1100},{y:38,v:220}],
+  area:[{y:0,v:68000},{y:38,v:28687},{y:44,v:17160}],
+  sal:[{y:0,v:10},{y:30,v:30}],
+};
+const MILES=[{y:27,t:'1987 · sea splits N / S'},{y:45,t:'2005 · Kok-Aral dam saves the North'},{y:54,t:'2014 · eastern basin dries out'}];
+/* real-history irrigation ramp tuned to track measured area (10→95 km³ over 24 yr) */
+function histRamp(y,years){const t=Math.min(y/24,1);return 10+t*(95-10);}
+
+/* ===== helpers ===== */
+const el=id=>document.getElementById(id);
+function mix(a,b,t){t=Math.max(0,Math.min(1,t));
+  const pa=[parseInt(a.slice(1,3),16),parseInt(a.slice(3,5),16),parseInt(a.slice(5,7),16)];
+  const pb=[parseInt(b.slice(1,3),16),parseInt(b.slice(3,5),16),parseInt(b.slice(5,7),16)];
+  return '#'+pa.map((v,i)=>Math.round(v+(pb[i]-v)*t).toString(16).padStart(2,'0')).join('');}
+function saltColor(sal){
+  if(sal<24)return mix('#39b9ef','#5eead4',(sal-10)/14);
+  if(sal<50)return mix('#5eead4','#e7dcc3',(sal-24)/26);
+  return mix('#e7dcc3','#b4531f',Math.min((sal-50)/60,1));
+}
+function fmt(n,d=1){return n.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function toast(m){const t=el('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1500);}
+
+/* ===== controls ===== */
+const irr=el('irr'),win=el('win'),yrs=el('yrs');
+const PRESETS=[
+  {t:'Balanced stewardship',d:'Share the water. The sea lives.',irr:45,win:50},
+  {t:'Power first',d:'Winter electricity, sea saved, food cut.',irr:30,win:85},
+  {t:'Food first',d:'Maximum cotton. The sea pays.',irr:100,win:45},
+  {t:'Historical collapse',d:'All water to cotton — what really happened.',irr:100,win:20},
+];
+const pbox=el('presets');
+PRESETS.forEach((p,i)=>{const b=document.createElement('button');b.className='preset';b.dataset.i=i;
+  b.innerHTML=`<div class="pt">${p.t}</div><div class="pd">${p.d}</div>`;
+  b.onclick=()=>{irr.value=p.irr;win.value=p.win;realMode=false;setOn(i);syncLabels();};pbox.appendChild(b);});
+// real-history replay (spans the full 1960→2010 window, ramps irrigation like history)
+const realBtn=document.createElement('button');realBtn.className='preset real';realBtn.dataset.i='real';
+realBtn.innerHTML=`<div class="pt">Replay real history 1960→2010<span class="badge">real data</span></div>
+  <div class="pd">Run the actual policy path and watch the model track the measured gold points.</div>`;
+realBtn.onclick=()=>{realMode=true;yrs.value=50;setOn('real');syncLabels();run();};pbox.appendChild(realBtn);
+
+function setOn(i){document.querySelectorAll('.preset').forEach(b=>b.classList.toggle('on',b.dataset.i==i));}
+function clearOn(){document.querySelectorAll('.preset').forEach(b=>b.classList.remove('on'));}
+function fill(inp){inp.style.setProperty('--f',(inp.value-inp.min)/(inp.max-inp.min)*100+'%');}
+function syncLabels(){el('virr').textContent=irr.value;el('vwin').textContent=win.value;el('vyrs').textContent=yrs.value;fill(irr);fill(win);fill(yrs);}
+[irr,win].forEach(s=>s.addEventListener('input',()=>{clearOn();realMode=false;syncLabels();}));
+yrs.addEventListener('input',()=>{realMode=false;syncLabels();});
+let realMode=false;
+syncLabels();
+
+/* ===== render sea ===== */
+function paintSea(st,years){
+  const frac=Math.max(st.V/P.V0,0);
+  const kS=Math.max(Math.sqrt(frac),0.12);
+  // North Aral: tracks the sea, but in real-history replay it recovers after the 2005 Kok-Aral dam
+  let nFrac=frac;
+  if(realMode && st.y>=45){ const t=Math.min((st.y-45)/5,1); nFrac=frac + t*(0.62-frac); }
+  const kN=Math.max(Math.sqrt(Math.max(nFrac,0)),0.12);
+  const ax=100,ay=225;   // south retreats toward the deep western basin
+  el('waterSG').setAttribute('transform',`translate(${ax} ${ay}) scale(${kS.toFixed(3)}) translate(${-ax} ${-ay})`);
+  const nx=150,ny=74;
+  el('waterNG').setAttribute('transform',`translate(${nx} ${ny}) scale(${kN.toFixed(3)}) translate(${-nx} ${-ny})`);
+  el('waterS').setAttribute('fill',saltColor(st.salinity));
+  el('waterN').setAttribute('fill',saltColor(realMode&&st.y>=47?Math.min(st.salinity,20):st.salinity));
+  el('yrNow').textContent=1960+st.y;
+  const pct=(st.V/P.V0*100);
+  const cap = st.salinity>60?`The sea has all but vanished — <b>${st.salinity.toFixed(0)} g/L</b>, a salt desert where a fishery once was.`
+    : st.salinity>24?`Retreating — <b>${pct.toFixed(0)}%</b> of its 1960 water left, salinity <b>${st.salinity.toFixed(0)} g/L</b> past the fishery limit.`
+    : `Holding — <b>${pct.toFixed(0)}%</b> of its 1960 water, salinity <b>${st.salinity.toFixed(0)} g/L</b>, still alive.`;
+  el('caption').innerHTML=cap;
+  // milestone flags (real mode only)
+  const mf=el('mileflag');
+  [...mf.children].forEach((c,i)=>c.classList.toggle('on', realMode && st.y>=MILES[i].y));
+}
+function gauge(v,min,max){return Math.max(0,Math.min(100,(v-min)/(max-min)*100));}
+function setKPI(st){
+  el('gPower').innerHTML=fmt(st.power||0,1)+' <small>TWh</small>';
+  el('gCrop').innerHTML=fmt(st.crop||0,1)+' <small>Mt</small>';
+  el('gLevel').innerHTML=fmt(st.level,0)+' <small>m</small>';
+  el('gSalt').innerHTML=fmt(st.salinity,0)+' <small>g/L</small>';
+  el('fPower').style.width=gauge(st.power||0,0,35)+'%';
+  el('fCrop').style.width=gauge(st.crop||0,0,12)+'%';
+  el('fLevel').style.width=gauge(st.level,25,53)+'%';
+  el('fSalt').style.width=gauge(st.salinity,10,120)+'%';
+  const sc=st.salinity<24?'var(--crop)':(st.salinity<50?'var(--power)':'var(--rust)');
+  el('gSalt').style.color=sc;el('fSalt').style.background=sc;el('dSalt').style.background=sc;
+  el('sSalt').textContent=st.salinity<24?'fishery can live':(st.salinity<50?'fishery stressed':'fishery dead');
+  el('sPower').textContent=(st.power>18)?'strong winter supply':'modest supply';
+  el('sCrop').textContent=(st.demand&&st.delivered<st.demand-1)?'fields water-stressed':'fields watered';
+  el('sLevel').textContent=(st.V/P.V0>0.6)?'sea holding':(st.V/P.V0>0.25?'sea shrinking':'sea near gone');
+}
+/* ===== charts (with measured overlay) ===== */
+function drawLine(canvas,data,key,color,opts={}){
+  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
+  const pad={l:40,r:12,t:12,b:20};
+  const xs=data.map(d=>d.y),ys=data.map(d=>d[key]);
+  const scaleY=opts.scaleY||1;
+  const xmax=Math.max(...xs,1);let ymax=(opts.ymax||Math.max(...ys,1))*1.08,ymin=0;
+  const X=v=>pad.l+(v/xmax)*(W-pad.l-pad.r),Y=v=>H-pad.b-((v-ymin)/(ymax-ymin))*(H-pad.t-pad.b);
+  ctx.strokeStyle='rgba(255,255,255,.055)';ctx.fillStyle='#6c7f90';ctx.font='10px ui-sans-serif,sans-serif';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const v=ymin+(ymax-ymin)*i/4,y=Y(v);ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.fillText(Math.round(v/scaleY),4,y+3);}
+  if(opts.threshold!=null&&opts.threshold<ymax){const y=Y(opts.threshold);ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(180,83,31,.7)';
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='rgba(180,83,31,.95)';ctx.fillText(opts.thLabel||'',pad.l+4,y-4);}
+  const n=opts.upto!=null?opts.upto:data.length-1;
+  ctx.beginPath();ctx.moveTo(X(xs[0]),Y(ys[0]));for(let i=1;i<=n;i++)ctx.lineTo(X(xs[i]),Y(ys[i]));
+  ctx.lineTo(X(xs[n]),H-pad.b);ctx.lineTo(X(xs[0]),H-pad.b);ctx.closePath();
+  const g=ctx.createLinearGradient(0,pad.t,0,H-pad.b);g.addColorStop(0,color+'50');g.addColorStop(1,color+'05');ctx.fillStyle=g;ctx.fill();
+  ctx.beginPath();ctx.moveTo(X(xs[0]),Y(ys[0]));for(let i=1;i<=n;i++)ctx.lineTo(X(xs[i]),Y(ys[i]));
+  ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.lineJoin='round';ctx.stroke();
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(X(xs[n]),Y(ys[n]),3.4,0,7);ctx.fill();
+  // measured gold markers
+  if(opts.meas){ opts.meas.forEach(m=>{ if(m.y>xmax)return; const cx=X(m.y),cy=Y(m.v*scaleY);
+    ctx.fillStyle='#ffcf5a';ctx.strokeStyle='#7a5b12';ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.arc(cx,cy,4.2,0,7);ctx.fill();ctx.stroke(); }); }
+}
+function drawAll(upto){
+  drawLine(el('cVol'),series,'V','#39b9ef',{ymax:P.V0,upto,meas:MEAS.V});
+  drawLine(el('cArea'),series,'area','#5eead4',{ymax:P.A0,scaleY:1/1000,upto,meas:MEAS.area.map(m=>({y:m.y,v:m.v/1000}))});
+  drawLine(el('cSal'),series,'salinity','#e0842f',{ymax:Math.max(80,...series.map(s=>s.salinity))*1.05,upto,threshold:24,thLabel:'fishery limit',meas:MEAS.sal});
+}
+/* ===== verdict ===== */
+function verdict(series){
+  const f=series[series.length-1],vf=f.V/P.V0,L=[];const push=(c,t)=>L.push({c,t});
+  if(f.salinity>60)push('var(--bad)',`The Aral collapsed — ${f.salinity.toFixed(0)} g/L, saltier than the ocean. The fishery is dead.`);
+  else if(f.salinity>24)push('var(--rust)',`The sea survives but is stressed — ${f.salinity.toFixed(0)} g/L is past what a freshwater fishery can take.`);
+  else push('var(--crop)',`The sea stayed healthy — ${f.salinity.toFixed(0)} g/L, fresh enough for fish to live.`);
+  push('var(--sea)',`Water left in the sea: ${(vf*100).toFixed(0)}% of its 1960 volume (level ${f.level.toFixed(0)} m).`);
+  push('var(--power)',`Winter electricity: ${f.power.toFixed(1)} TWh/yr ${f.power>18?'— a strong winter supply.':f.power>8?'— a modest supply.':'— very little; water was held for summer.'}`);
+  const stressed=f.demand&&f.delivered<f.demand-1;
+  push('var(--crop)',`Crops: ${f.crop.toFixed(1)} Mt/yr${stressed?` — fields wanted ${f.demand.toFixed(0)} km³ but got ${f.delivered.toFixed(0)}; summer water ran short.`:' — fields were fully watered.'}`);
+  return L;
+}
+function paintScore(f){
+  const sc=scoreOf(f);
+  el('ring').style.setProperty('--p',sc.total);
+  el('scoreV').textContent=sc.total;el('scoreTitle').textContent=sc.title;el('scoreDesc').textContent=sc.desc;
+  el('ssSea').textContent=sc.sea;el('ssPow').textContent=sc.pow;el('ssCrop').textContent=sc.crop;
+  el('ssSeaB').style.width=sc.sea+'%';el('ssPowB').style.width=sc.pow+'%';el('ssCropB').style.width=sc.crop+'%';
+  lastScore=sc;
+}
+/* ===== run ===== */
+let timer=null,series=null,lastScore=null;
+function run(){
+  clearTimeout(timer);stopPlay();
+  const years=+yrs.value;
+  series = realMode ? simulate(0,0.2,years,{irrRamp:histRamp,evapRate:1.05})
+                    : simulate(+irr.value,+win.value/100,years);
+  el('vGrid').innerHTML='';el('vHead').textContent='Running…';
+  el('scrub').classList.remove('on');
+  let i=0;
+  const step=()=>{
+    const st=series[i];
+    paintSea(st,years);setKPI(st);drawAll(i);
+    if(i<series.length-1){i++;timer=setTimeout(step,realMode?42:30);}else finish();
+  };step();
+}
+function finish(){
+  const lines=verdict(series);
+  const f=series[series.length-1];
+  el('vHead').textContent = realMode
+    ? 'The real path: the model tracks the measured collapse (gold points), and the North Aral recovers after the 2005 dam.'
+    : scoreOf(f).title;
+  const g=el('vGrid');g.innerHTML='';
+  lines.forEach(L=>{const d=document.createElement('div');d.className='vline';
+    d.innerHTML=`<span class="ic" style="background:${L.c}"></span><span>${L.t}</span>`;g.appendChild(d);});
+  paintScore(f);
+  // enable scrubber
+  const sr=el('scrub-range');sr.max=series.length-1;sr.value=series.length-1;
+  el('scrYr').textContent=1960+f.y;el('scrub').classList.add('on');
+}
+/* ===== scrubber + playback ===== */
+let playTimer=null;
+function scrubTo(i){const st=series[i];paintSea(st,+yrs.value);setKPI(st);drawAll(i);el('scrYr').textContent=1960+st.y;el('scrub-range').value=i;}
+el('scrub-range').addEventListener('input',e=>{ if(series) scrubTo(+e.target.value); });
+function stopPlay(){clearInterval(playTimer);playTimer=null;el('playBtn').textContent='▶ Play';}
+el('playBtn').onclick=()=>{
+  if(!series)return;
+  if(playTimer){stopPlay();return;}
+  el('playBtn').textContent='❚❚ Pause';let i=+el('scrub-range').value;if(i>=series.length-1)i=0;
+  playTimer=setInterval(()=>{ if(i>=series.length-1){stopPlay();return;} i++;scrubTo(i); },70);
+};
+/* ===== buttons ===== */
+el('runBtn').onclick=()=>{ if(!document.querySelector('.preset.on')) realMode=false; run(); };
+el('saveBtn').onclick=()=>{try{localStorage.setItem('upstream_policy',JSON.stringify({irr:irr.value,win:win.value,yrs:yrs.value}));
+  toast('Policy saved');}catch(e){}};
+el('csvBtn').onclick=()=>{
+  if(!series){toast('Run a policy first');return;}
+  const rows=[['year','volume_km3','area_km2','level_m','salinity_g_per_L','winter_power_TWh','crop_Mt']];
+  series.forEach(s=>rows.push([1960+s.y,s.V.toFixed(1),Math.round(s.area),s.level.toFixed(1),s.salinity.toFixed(1),(s.power||0).toFixed(2),(s.crop||0).toFixed(2)]));
+  const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='upstream-run.csv';
+  document.body.appendChild(a);a.click();a.remove();toast('CSV downloaded');
+};
+el('shareBtn').onclick=async()=>{
+  if(!series||!lastScore){toast('Run a policy first');return;}
+  const f=series[series.length-1],c=el('cardCanvas'),x=c.getContext('2d'),W=1080,H=1080,F='-apple-system,Segoe UI,Roboto,Arial,sans-serif';
+  x.fillStyle='#0a1017';x.fillRect(0,0,W,H);
+  const bg=x.createRadialGradient(760,120,60,760,120,760);bg.addColorStop(0,'rgba(56,189,248,.18)');bg.addColorStop(1,'transparent');x.fillStyle=bg;x.fillRect(0,0,W,H);
+  x.fillStyle='#0f1823';x.strokeStyle='#24313f';x.lineWidth=3;
+  x.beginPath();x.roundRect(60,60,W-120,H-120,44);x.fill();x.stroke();
+  x.textAlign='center';
+  x.fillStyle='#5eead4';x.font='700 40px '+F;x.fillText('UPSTREAM · THE ARAL SEA MACHINE',W/2,180);
+  x.fillStyle='#eef4f8';x.font='800 190px '+F;x.fillText(lastScore.total,W/2,470);
+  x.fillStyle='#9fb2c4';x.font='500 40px '+F;x.fillText('Basin steward score',W/2,540);
+  x.fillStyle='#ffffff';x.font='800 54px '+F;x.fillText(lastScore.title,W/2,650);
+  const cells=[['Living sea',lastScore.sea,'#3aa9e0'],['Power',lastScore.pow,'#f6b93b'],['Food',lastScore.crop,'#54cf7c']];
+  cells.forEach((cl,i)=>{const cx=W/2+(i-1)*300;x.fillStyle=cl[2];x.font='800 92px '+F;x.fillText(cl[1],cx,830);
+    x.fillStyle='#9fb2c4';x.font='500 34px '+F;x.fillText(cl[0],cx,884);});
+  x.fillStyle='#6c7f90';x.font='400 30px '+F;x.fillText(`sea ${f.salinity.toFixed(0)} g/L · power ${f.power.toFixed(1)} TWh · crop ${f.crop.toFixed(1)} Mt`,W/2,980);
+  c.toBlob(async b=>{
+    const file=new File([b],'upstream-score.png',{type:'image/png'});
+    try{ if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Upstream'});return;} }catch(e){}
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='upstream-score.png';document.body.appendChild(a);a.click();a.remove();toast('Card saved');
+  },'image/png');
+};
+/* build milestone flags */
+el('mileflag').innerHTML=MILES.map(m=>`<div class="m">${m.t}</div>`).join('');
+/* restore */
+(function(){try{const s=JSON.parse(localStorage.getItem('upstream_policy')||'null');
+  if(s){irr.value=s.irr;win.value=s.win;yrs.value=s.yrs;clearOn();syncLabels();}}catch(e){}})();
+/* initial */
+window.addEventListener('load',()=>{
+  paintSea({V:P.V0,salinity:P.C0,level:P.L0,y:0},50);
+  setKPI({power:0,crop:0,level:P.L0,salinity:P.C0,V:P.V0,demand:70,delivered:70});
+});
+</script>
+</body>
+</html>
