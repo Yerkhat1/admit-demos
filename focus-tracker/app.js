@@ -14,7 +14,7 @@
  *   settings: { goal: <daily minutes goal>, subjects: [ ...names ] }
  */
 
-const STORE = { sessions: "ft.sessions.v2", settings: "ft.settings.v2" };
+const STORE = { sessions: "ft.sessions.v2", settings: "ft.settings.v2", timer: "ft.timer.v2" };
 const DEFAULT_SUBJECTS = ["Math", "Physics", "Chemistry", "English", "Biology"];
 const DEFAULT_GOAL = 120;
 const RING_C = 2 * Math.PI * 52; // circumference of the ring (r = 52)
@@ -22,7 +22,11 @@ const RING_C = 2 * Math.PI * 52; // circumference of the ring (r = 52)
 let selectedSubject = null;
 let selectedMinutes = 45;
 let subjectRange = "week";
-let timer = { total: 0, remaining: 0, running: false, id: null, inSession: false };
+// endAt = wall-clock (Date.now ms) the running session should hit 0. We time the
+// session by comparing to the real clock, not by counting ticks, so a phone that
+// locks or a backgrounded tab (where the browser throttles setInterval) still shows
+// the true remaining time instead of freezing.
+let timer = { total: 0, remaining: 0, running: false, id: null, inSession: false, endAt: null };
 
 /* ---------- storage ---------- */
 function load(key, fallback) {
@@ -170,6 +174,32 @@ function renderToday() {
   ring.style.strokeDasharray = RING_C;
   ring.style.strokeDashoffset = RING_C * (1 - frac);
 }
+// milestones worth a celebration when the streak reaches them
+const STREAK_MILESTONES = [3, 7, 14, 21, 30, 50, 100];
+// the "don't break the chain" heartbeat: one honest line about the streak's state today
+function renderChainNudge() {
+  const el = document.getElementById("chain-nudge");
+  const sessions = getSessions();
+  const { current } = computeStreaks(sessions);
+  const studiedToday = todayStats(sessions).minutes > 0;
+  let msg, cls;
+  if (!sessions.length) {
+    msg = "👋 Run one focus session to start your chain. The whole idea: don't break it.";
+    cls = "welcome";
+  } else if (studiedToday) {
+    msg = current > 1 ? `🔥 ${current}-day streak, and today is done. Chain unbroken.` : "✅ Studied today. Come back tomorrow to start a streak.";
+    cls = "safe";
+  } else if (current >= 1) {
+    msg = `🔥 ${current}-day streak at risk. One focus session today keeps the chain.`;
+    cls = "risk";
+  } else {
+    msg = "No streak yet. One focus session today starts the chain.";
+    cls = "neutral";
+  }
+  el.className = "chain-nudge " + cls;
+  el.textContent = msg;
+  el.hidden = false;
+}
 function renderStreaks() {
   const s = getSessions();
   const { current, best } = computeStreaks(s);
@@ -242,6 +272,7 @@ function renderAll() {
   renderTimerDisplay();
   renderToday();
   renderStreaks();
+  renderChainNudge();
   renderSubjectBars();
   renderHeatmap();
   renderStats();
@@ -268,8 +299,24 @@ function updateControls() {
     document.getElementById("timer-label").textContent = "Ready to focus";
   }
 }
+// remaining time from the real clock while running; the frozen value when paused
+function computeRemaining() {
+  if (!timer.running || timer.endAt == null) return timer.remaining;
+  return Math.max(0, Math.round((timer.endAt - Date.now()) / 1000));
+}
+// save an in-progress session so a refresh or a closed tab doesn't lose it
+function persistTimer() {
+  if (!timer.inSession) { localStorage.removeItem(STORE.timer); return; }
+  save(STORE.timer, {
+    subject: selectedSubject,
+    total: timer.total,
+    remaining: timer.remaining,
+    endAt: timer.running ? timer.endAt : null,
+    running: timer.running,
+  });
+}
 function tick() {
-  timer.remaining--;
+  timer.remaining = computeRemaining();
   if (timer.remaining <= 0) { timer.remaining = 0; renderTimerDisplay(); completeSession(); return; }
   renderTimerDisplay();
 }
@@ -277,38 +324,55 @@ function startTimer() {
   if (timer.running) return;
   if (!timer.inSession) { timer.total = selectedMinutes * 60; timer.remaining = timer.total; timer.inSession = true; }
   timer.running = true;
+  timer.endAt = Date.now() + timer.remaining * 1000;
   timer.id = setInterval(tick, 1000);
+  persistTimer();
   updateControls();
   renderTimerDisplay();
 }
 function pauseTimer() {
+  timer.remaining = computeRemaining();
   timer.running = false;
+  timer.endAt = null;
   clearInterval(timer.id);
+  persistTimer();
   updateControls();
+  renderTimerDisplay();
 }
 function resetIdle() {
   clearInterval(timer.id);
-  timer = { total: selectedMinutes * 60, remaining: selectedMinutes * 60, running: false, id: null, inSession: false };
+  timer = { total: selectedMinutes * 60, remaining: selectedMinutes * 60, running: false, id: null, inSession: false, endAt: null };
+  localStorage.removeItem(STORE.timer);
   updateControls();
   renderTimerDisplay();
+}
+// log a finished block, refresh the UI, and celebrate a streak milestone if one was just hit
+function afterLog(minutes, subject, verb) {
+  renderAll();
+  const { current } = computeStreaks(getSessions());
+  if (STREAK_MILESTONES.includes(current)) {
+    toast(`🏆 ${current}-day streak! You didn't break the chain.`);
+  } else {
+    toast(`${verb} ${minutes}m of ${subject} · ${current}-day streak`);
+  }
 }
 function completeSession() {
   clearInterval(timer.id);
   const minutes = Math.round(timer.total / 60);
-  logSession(selectedSubject, minutes);
+  const subject = selectedSubject;
+  logSession(subject, minutes);
   resetIdle();
-  renderAll();
-  const { current } = computeStreaks(getSessions());
-  toast(`🎉 ${minutes}m of ${selectedSubject} logged · ${current}-day streak`);
+  afterLog(minutes, subject, "🎉");
 }
 function endTimer() {
+  timer.remaining = computeRemaining();
   const elapsedMin = Math.round((timer.total - timer.remaining) / 60);
   clearInterval(timer.id);
   if (elapsedMin >= 1) {
-    logSession(selectedSubject, elapsedMin);
+    const subject = selectedSubject;
+    logSession(subject, elapsedMin);
     resetIdle();
-    renderAll();
-    toast(`Logged ${elapsedMin}m of ${selectedSubject}`);
+    afterLog(elapsedMin, subject, "Logged");
   } else {
     resetIdle();
     toast("Session too short to log");
@@ -349,6 +413,9 @@ function wire() {
   document.getElementById("start-btn").addEventListener("click", startTimer);
   document.getElementById("pause-btn").addEventListener("click", pauseTimer);
   document.getElementById("end-btn").addEventListener("click", endTimer);
+
+  // coming back to the tab: snap to the real remaining time (finish if it elapsed while away)
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && timer.running) tick(); });
 
   document.getElementById("goal-edit").addEventListener("click", () => {
     const s = getSettings();
@@ -400,8 +467,40 @@ function injectGradient() {
     "</linearGradient></defs>";
   document.body.appendChild(svg);
 }
+// bring back a session that was mid-run when the tab was closed/refreshed
+function restoreTimer() {
+  const saved = load(STORE.timer, null);
+  if (!saved || !saved.total) return;
+  selectedSubject = saved.subject || selectedSubject;
+  timer.total = saved.total;
+  timer.inSession = true;
+  if (saved.running && saved.endAt) {
+    const remaining = Math.max(0, Math.round((saved.endAt - Date.now()) / 1000));
+    if (remaining <= 0) {
+      // it ran out while we were away — log the planned session honestly, then reset
+      const minutes = Math.round(saved.total / 60);
+      logSession(selectedSubject, minutes);
+      resetIdle();
+      toast(`Finished while away · ${minutes}m of ${selectedSubject} logged`);
+      return;
+    }
+    timer.remaining = remaining;
+    timer.running = true;
+    timer.endAt = saved.endAt;
+    timer.id = setInterval(tick, 1000);
+  } else {
+    timer.remaining = saved.remaining != null ? saved.remaining : saved.total;
+    timer.running = false;
+    timer.endAt = null;
+  }
+}
+
 injectGradient();
 document.getElementById("m-date").value = todayStr();
 wire();
-resetIdle();
+// clean idle baseline WITHOUT wiping storage (so restoreTimer can still read a saved session)
+clearInterval(timer.id);
+timer = { total: selectedMinutes * 60, remaining: selectedMinutes * 60, running: false, id: null, inSession: false, endAt: null };
+restoreTimer();  // overlay a saved in-progress session, if any
+updateControls();
 renderAll();
