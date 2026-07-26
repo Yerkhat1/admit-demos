@@ -95,6 +95,22 @@
   .hist td.best{color:var(--accent);font-weight:700}
   .hist .clear{background:transparent;border:none;color:var(--muted);cursor:pointer;
        font-size:12px;text-decoration:underline;margin-top:8px;padding:0}
+  /* Reaction-time distribution histogram */
+  .rtd{margin:18px 0 4px}
+  .rtd-title{color:var(--muted);font-size:13px;margin-bottom:8px}
+  .rtd-chart{display:flex;align-items:flex-end;gap:5px;height:90px;
+       background:#101b25;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .rtd-chart .bin{flex:1;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;
+       opacity:.85;transition:height .25s}
+  .rtd-axis{display:flex;justify-content:space-between;color:var(--muted);font-size:12px;
+       margin-top:6px;font-variant-numeric:tabular-nums}
+  details.sci{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+  details.sci summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;list-style:none;user-select:none}
+  details.sci summary::-webkit-details-marker{display:none}
+  details.sci summary::before{content:"▸  "}
+  details.sci[open] summary::before{content:"▾  "}
+  details.sci .body{color:var(--muted);font-size:14px;margin-top:10px;line-height:1.65}
+  details.sci .body b{color:var(--ink)}
   footer{color:var(--muted);font-size:13px;text-align:center;padding:22px;border-top:1px solid var(--line)}
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#101b25;
          border:1px solid var(--line);color:var(--ink);padding:10px 16px;border-radius:10px;
@@ -117,6 +133,8 @@
       <h2 id="introTitle"></h2>
       <p class="lead" id="hook"></p>
       <ul class="how" id="how"></ul>
+
+      <details class="sci"><summary id="sciSummary"></summary><div class="body" id="sciBody"></div></details>
 
       <div class="setup">
         <div class="row">
@@ -164,6 +182,12 @@
           <span class="val" id="vInc">—</span></div>
       </div>
 
+      <div class="rtd" id="rtd" style="display:none">
+        <div class="rtd-title" id="rtdTitle"></div>
+        <div class="rtd-chart" id="rtdChart"></div>
+        <div class="rtd-axis"><span id="rtdMin"></span><span id="rtdMax"></span></div>
+      </div>
+
       <div class="interp" id="interp"></div>
       <div class="note" id="detail"></div>
       <div class="note" id="best"></div>
@@ -179,12 +203,14 @@
       <div class="btnrow">
         <button class="btn" id="again"></button>
         <button class="btn ghost" id="share"></button>
+        <button class="btn ghost" id="download"></button>
       </div>
     </div>
   </section>
 </main>
 <footer id="footer"></footer>
 <div class="toast" id="toast"></div>
+<canvas id="cardCanvas" width="1080" height="1080" style="display:none"></canvas>
 
 <script>
 /* SplitSecond — a decision-science game (candidate 2 for Alikhan's tech project).
@@ -195,10 +221,19 @@
    Pure HTML/CSS/JS, no libraries — nothing to load, works offline once opened.
    Educational game, NOT a clinical or diagnostic test.
 
-   v2 essentials added: a warm-up (practice) block so reaction times aren't polluted by
+   v2 essentials: a warm-up (practice) block so reaction times aren't polluted by
    learning the controls; a session-length choice (10/20/30); a live progress bar; a full
    results breakdown (congruent vs incongruent RT + errors, not just the single number);
-   and a local attempt-history log. The verified trial engine + results math are unchanged. */
+   and a local attempt-history log.
+   v3 (2026-07-26, locked as the tech project): a collapsible "the science" explainer that
+   frames it as a real Stroop instrument (not "just a game"); per-trial CSV data export so a
+   real reaction-time dataset can be collected + analysed; and a native share sheet (Web Share
+   API) with clipboard fallback to drive friend-to-friend distribution.
+   v4 (2026-07-26): the share button now generates a branded, bilingual PNG result CARD (canvas)
+   and shares it as an IMAGE on mobile (Web Share files) / saves the PNG on desktop — images
+   spread far better than text among friends, which is this game's whole growth channel; and the
+   results screen shows a reaction-time DISTRIBUTION histogram (spread of the correct trials, not
+   just the mean) to reinforce the data-analysis story. Trial engine + Stroop math unchanged. */
 
 const COLORS = [
   {key:'red',    hex:'#e5484d', kz:'ҚЫЗЫЛ',  ru:'КРАСНЫЙ'},
@@ -231,9 +266,14 @@ const T = {
        best:v=>`Ең үздік қайшылық құныңыз: ${v} мс`,
        histTitle:'Соңғы нәтижелер', hDate:'Күні', hCost:'Қайшылық құны', hAcc:'Дәлдік', hLen:'Сынақ',
        clearHist:'Тарихты тазарту', cleared:'Тарих тазартылды',
-       again:'Қайта ойнау', share:'Нәтижені көшіру',
-       shareText:(s,rt,acc)=>`SplitSecond: қайшылық құным ${s} мс, орташа уақыт ${rt} мс, дәлдік ${acc}%.`,
-       copied:'Нәтиже көшірілді',
+       again:'Қайта ойнау', share:'Нәтижені бөлісу', download:'Деректерді жүктеу (CSV)',
+       shareText:(s,rt,acc)=>`SplitSecond: қайшылық құным ${s} мс, орташа уақыт ${rt} мс, дәлдік ${acc}%. Өзіңдікін өлшеп көр!`,
+       copied:'Нәтиже көшірілді', downloaded:'Деректер жүктелді (CSV)', imgSaved:'Сурет сақталды',
+       rtdTitle:'Реакция уақытының таралуы (дұрыс жауаптар, мс)',
+       card:{cost:'Қайшылық құны', rt:'Орташа уақыт', acc:'Дәлдік', ms:'мс',
+             tag:'Струп тесті · өз реакцияңды өлше'},
+       sciSummary:'Бұл нені өлшейді? (ғылымы)',
+       sciBody:'Бұл — <b>Струп тесті</b> (Дж. Ридли Струп, 1935). Сөздің мағынасы мен түсі <b>сәйкес</b> келгенде миыңыз тез жауап береді; <b>қайшы</b> келгенде екі сигнал таласады да, жауап баяулайды. Осы баяулау — <b>қайшылық құны</b> (қайшы уақыт − сәйкес уақыт), зейін мен импульсті тежеудің өлшемі. Сонымен қатар <b>жылдамдық пен дәлдіктің</b> арасында таңдау бар: тым асықсаңыз, қате көбейеді. Әр сынақтың нақты уақыты өлшеніп, CSV түрінде жүктеуге болады — өз деректеріңізді талдай аласыз. Бұл оқу ойыны, медициналық диагноз емес.',
        footer:'Струп тесті (1935) мен «жылдамдық–дәлдік» принципіне негізделген оқу ойыны. Медициналық тест емес. Кітапханасыз таза веб-технология.',
        miss:'—' },
   ru:{ tagline:'Как вы решаете под давлением? На основе теста Струпа.',
@@ -255,9 +295,14 @@ const T = {
        best:v=>`Ваша лучшая цена конфликта: ${v} мс`,
        histTitle:'Последние попытки', hDate:'Дата', hCost:'Цена конфликта', hAcc:'Точность', hLen:'Проб',
        clearHist:'Очистить историю', cleared:'История очищена',
-       again:'Играть снова', share:'Скопировать результат',
-       shareText:(s,rt,acc)=>`SplitSecond: моя цена конфликта ${s} мс, среднее время ${rt} мс, точность ${acc}%.`,
-       copied:'Результат скопирован',
+       again:'Играть снова', share:'Поделиться результатом', download:'Скачать данные (CSV)',
+       shareText:(s,rt,acc)=>`SplitSecond: моя цена конфликта ${s} мс, среднее время ${rt} мс, точность ${acc}%. Проверь свою!`,
+       copied:'Результат скопирован', downloaded:'Данные скачаны (CSV)', imgSaved:'Картинка сохранена',
+       rtdTitle:'Распределение времени реакции (верные ответы, мс)',
+       card:{cost:'Цена конфликта', rt:'Среднее время', acc:'Точность', ms:'мс',
+             tag:'Тест Струпа · измерь свою реакцию'},
+       sciSummary:'Что это измеряет? (наука)',
+       sciBody:'Это <b>тест Струпа</b> (Дж. Ридли Струп, 1935). Когда значение слова и его цвет <b>совпадают</b>, мозг отвечает быстро; когда <b>конфликтуют</b>, два сигнала спорят, и ответ замедляется. Это замедление — <b>цена конфликта</b> (время конфликтных проб − время совпадающих), мера внимания и торможения импульса. Есть и выбор между <b>скоростью и точностью</b>: спешишь — растут ошибки. Точное время каждой пробы записывается, и его можно скачать в CSV — вы можете проанализировать свои собственные данные. Это обучающая игра, а не медицинский диагноз.',
        footer:'Обучающая игра на основе теста Струпа (1935) и принципа «скорость–точность». Не медицинский тест. Чистая веб-технология без библиотек.',
        miss:'—' },
 };
@@ -349,7 +394,8 @@ function respond(colorKey){
   const t = trials[idx];
   const rt = Math.round(performance.now()-onset);
   const correct = colorKey===t.ink.key;
-  results.push({rt, correct, congruent:t.congruent, timeout:colorKey===null});   // practice results are simply discarded on next runBlock
+  results.push({rt, correct, congruent:t.congruent, timeout:colorKey===null,
+                word:t.word.key, ink:t.ink.key, chose:colorKey});   // practice results are simply discarded on next runBlock
   const stage=$('stage');
   stage.classList.add(correct ? 'flash-ok' : 'flash-bad');
   idx++;
@@ -370,10 +416,12 @@ function computeStats(res){
 }
 
 let lastStats=null;              // last result set, so a language toggle can repaint it
+let lastTrials=[];               // last scored block's per-trial data, for CSV export
 function showResults(){
   document.body.dataset.screen='results';
   const s = computeStats(results);
   lastStats = s;
+  lastTrials = results.slice();  // snapshot the real block's trials for download
   // write personal best ONCE (positive costs only)
   try{
     if(s.stroop!==null && s.stroop>0){
@@ -407,10 +455,91 @@ function paintResults(s){
   try{ const best = parseInt(localStorage.getItem('ss_best')||'0',10); if(best>0) bestTxt = t.best(best); }catch(e){}
   $('best').textContent = bestTxt;
 
-  $('share').onclick = ()=>{
+  paintRTD();
+
+  $('share').onclick = async ()=>{
     const txt = t.shareText(s.stroop===null?'—':s.stroop, s.meanRT, s.acc);
-    navigator.clipboard?.writeText(txt).then(toast(t.copied), ()=>{});
+    try{
+      const blob = await makeCardBlob(s);
+      const file = new File([blob], 'splitsecond-result.png', {type:'image/png'});
+      if(navigator.canShare && navigator.canShare({files:[file]})){   // share the IMAGE card (mobile)
+        await navigator.share({files:[file], text:txt, title:'SplitSecond'});
+        return;
+      }
+      const url = URL.createObjectURL(blob);                          // desktop: save the PNG
+      const a = document.createElement('a');
+      a.href = url; a.download = 'splitsecond-result.png';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      toast(t.imgSaved)();
+    }catch(e){
+      navigator.clipboard?.writeText(txt).then(toast(t.copied), ()=>{});   // last-resort text fallback
+    }
   };
+}
+
+/* Reaction-time distribution of the correct trials — shows the spread, not just the mean. */
+function paintRTD(){
+  const t=T[lang];
+  const rts = lastTrials.filter(r=>r.correct && !r.timeout).map(r=>r.rt);
+  const box=$('rtd');
+  if(rts.length < 4){ box.style.display='none'; return; }
+  box.style.display='block';
+  $('rtdTitle').textContent = t.rtdTitle;
+  const min=Math.min(...rts), max=Math.max(...rts), span=(max-min)||1, BINS=8;
+  const counts=new Array(BINS).fill(0);
+  rts.forEach(v=>{ let b=Math.floor((v-min)/span*BINS); if(b>=BINS)b=BINS-1; if(b<0)b=0; counts[b]++; });
+  const peak=Math.max(...counts)||1;
+  $('rtdChart').innerHTML = counts.map(c=>
+    `<span class="bin" style="height:${Math.max(4,Math.round(100*c/peak))}%" title="${c}"></span>`).join('');
+  $('rtdMin').textContent = min+' '+t.card.ms;
+  $('rtdMax').textContent = max+' '+t.card.ms;
+}
+
+/* Render a branded, bilingual result card to the offscreen canvas → PNG Blob (for image sharing). */
+const CARD_FONT = '-apple-system,Segoe UI,Roboto,Arial,sans-serif';
+function roundRect(x,rx,ry,w,h,r){ x.beginPath(); x.moveTo(rx+r,ry);
+  x.arcTo(rx+w,ry,rx+w,ry+h,r); x.arcTo(rx+w,ry+h,rx,ry+h,r);
+  x.arcTo(rx,ry+h,rx,ry,r); x.arcTo(rx,ry,rx+w,ry,r); x.closePath(); }
+function makeCardBlob(s){
+  return new Promise(resolve=>{
+    const t=T[lang], c=$('cardCanvas'), x=c.getContext('2d'), W=1080, H=1080;
+    x.fillStyle='#0f1720'; x.fillRect(0,0,W,H);
+    x.fillStyle='#17222e'; x.strokeStyle='#243343'; x.lineWidth=3;
+    roundRect(x,60,60,W-120,H-120,44); x.fill(); x.stroke();
+    x.textAlign='center';
+    x.fillStyle='#e8eef4'; x.font='700 66px '+CARD_FONT; x.fillText('SplitSecond', W/2, 205);
+    x.fillStyle='#9fb2c4'; x.font='400 30px '+CARD_FONT; x.fillText(t.card.tag, W/2, 258);
+    const cost = s.stroop===null ? t.miss : (s.stroop+' '+t.card.ms);
+    x.fillStyle='#3aa0ff'; x.font='800 172px '+CARD_FONT; x.fillText(cost, W/2, 540);
+    x.fillStyle='#9fb2c4'; x.font='500 40px '+CARD_FONT; x.fillText(t.card.cost, W/2, 610);
+    x.fillStyle='#e8eef4'; x.font='800 86px '+CARD_FONT;
+    x.fillText(s.meanRT+' '+t.card.ms, W/2-232, 800);
+    x.fillText(s.acc+'%', W/2+232, 800);
+    x.fillStyle='#9fb2c4'; x.font='500 34px '+CARD_FONT;
+    x.fillText(t.card.rt, W/2-232, 852); x.fillText(t.card.acc, W/2+232, 852);
+    x.fillStyle='#6b7d8f'; x.font='400 30px '+CARD_FONT; x.fillText('Stroop task · 1935', W/2, 985);
+    c.toBlob(b=>resolve(b), 'image/png');
+  });
+}
+
+/* Download the scored block as a real reaction-time dataset (CSV, offline). */
+function downloadCSV(){
+  if(!lastTrials.length) return;
+  const rows = [['trial','condition','word','ink','chosen','correct','rt_ms','timed_out']];
+  lastTrials.forEach((r,i)=>{
+    rows.push([i+1, r.congruent?'congruent':'incongruent', r.word||'', r.ink||'',
+               r.chose||'', r.correct?1:0, r.rt, r.timeout?1:0]);
+  });
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}`;
+  const a = document.createElement('a');
+  a.href = url; a.download = `splitsecond-data-${stamp}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast(T[lang].downloaded)();
 }
 
 /* ---- attempt history (localStorage, newest first, capped) ---- */
@@ -445,6 +574,8 @@ function renderStatic(){
   $('introTitle').textContent=t.introTitle;
   $('hook').textContent=t.hook;
   $('how').innerHTML = t.how.map(li=>`<li>${li}</li>`).join('');
+  $('sciSummary').textContent=t.sciSummary;
+  $('sciBody').innerHTML=t.sciBody;
   $('lenLabel').textContent=t.lenLabel;
   $('practiceLabel').textContent=t.practiceLabel;
   $('start').textContent=t.start;
@@ -455,7 +586,7 @@ function renderStatic(){
   $('histTitle').textContent=t.histTitle;
   $('hDate').textContent=t.hDate; $('hCost').textContent=t.hCost; $('hAcc').textContent=t.hAcc; $('hLen').textContent=t.hLen;
   $('clearHist').textContent=t.clearHist;
-  $('again').textContent=t.again; $('share').textContent=t.share;
+  $('again').textContent=t.again; $('share').textContent=t.share; $('download').textContent=t.download;
   $('footer').textContent=t.footer;
 }
 
@@ -482,6 +613,7 @@ $('lenSeg').querySelectorAll('button').forEach(b=>{ b.textContent = b.dataset.n;
 document.querySelectorAll('.lang button').forEach(b=> b.addEventListener('click', ()=>setLang(b.dataset.lang)));
 $('start').addEventListener('click', startTask);
 $('again').addEventListener('click', ()=>{ document.body.dataset.screen='intro'; });
+$('download').addEventListener('click', downloadCSV);
 $('quit').addEventListener('click', ()=>{ clearTimeout(timer); accepting=false; document.body.dataset.screen='intro'; });
 $('clearHist').addEventListener('click', ()=>{ try{ localStorage.removeItem(HIST_KEY);}catch(e){} renderHistory(); toast(T[lang].cleared)(); });
 window.addEventListener('keydown', e=>{
