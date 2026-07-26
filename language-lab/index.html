@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Language Lab — where mixed language breaks reading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080a10; --card:rgba(255,255,255,.045); --border:rgba(255,255,255,.09); --border-strong:rgba(255,255,255,.16);
+  --tp:#eef2fb; --ts:#aab3c7; --tm:#727c92;
+  --accent:#6366f1; --cyan:#22d3ee; --emerald:#34d399;
+  --grad:linear-gradient(135deg,#6366f1 0%,#8b5cf6 45%,#22d3ee 100%);
+  --grad-soft:linear-gradient(135deg,rgba(99,102,241,.18),rgba(34,211,238,.12));
+  --good:#34d399; --good-bg:rgba(52,211,153,.12); --good-bd:rgba(52,211,153,.4);
+  --warn:#fbbf24; --warn-bg:rgba(251,191,36,.12); --warn-bd:rgba(251,191,36,.4);
+  --bad:#f87171; --bad-bg:rgba(248,113,113,.12); --bad-bd:rgba(248,113,113,.4);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 40px rgba(0,0,0,.5); --r:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tp);min-height:100vh;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.orb{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;}
+.orb1{top:-18%;right:-8%;width:620px;height:620px;background:radial-gradient(circle,rgba(99,102,241,.55),transparent 70%);animation:drift 22s ease-in-out infinite;}
+.orb2{bottom:-20%;left:-12%;width:560px;height:560px;background:radial-gradient(circle,rgba(34,211,238,.4),transparent 70%);animation:drift 27s ease-in-out infinite 4s;}
+@keyframes drift{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-40px) scale(1.06);}}
+@media(prefers-reduced-motion:reduce){.orb{animation:none;}}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:20px 20px 60px;}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;}
+.brand .dot{width:22px;height:22px;border-radius:7px;background:var(--grad);box-shadow:0 0 18px rgba(99,102,241,.6);}
+.brand small{display:block;font-size:11px;font-weight:500;color:var(--tm);letter-spacing:.02em;}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--border);border-radius:50px;padding:3px;backdrop-filter:blur(10px);}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:none;background:none;color:var(--ts);padding:7px 15px;border-radius:50px;cursor:pointer;transition:.2s;}
+.seg button.on{background:var(--grad);color:#fff;box-shadow:0 2px 12px rgba(99,102,241,.4);}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:26px;backdrop-filter:blur(14px);box-shadow:var(--shadow);}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);margin-bottom:12px;}
+h1{font-size:clamp(28px,5vw,44px);font-weight:800;line-height:1.06;letter-spacing:-.035em;margin-bottom:14px;}
+h2{font-size:23px;font-weight:700;letter-spacing:-.02em;margin-bottom:8px;}
+.grad-text{background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.lead{color:var(--ts);font-size:16px;}
+p{color:var(--ts);}
+.mut{color:var(--tm);font-size:13px;}
+label.fld{display:block;font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;}
+input.txt{font:inherit;font-weight:600;letter-spacing:.05em;width:100%;background:rgba(0,0,0,.25);border:1px solid var(--border-strong);border-radius:12px;padding:14px 16px;color:var(--tp);}
+input.txt:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.25);}
+.btn{font:inherit;font-weight:600;border:1px solid var(--border-strong);background:var(--card);color:var(--tp);border-radius:12px;padding:13px 22px;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:8px;}
+.btn:hover:not(:disabled){border-color:var(--tm);transform:translateY(-1px);}
+.btn:disabled{opacity:.5;cursor:default;}
+.btn-primary{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 4px 20px rgba(99,102,241,.4);}
+.btn-primary:hover:not(:disabled){box-shadow:0 8px 30px rgba(99,102,241,.55);transform:translateY(-2px);}
+.btn-lg{padding:15px 30px;font-size:16px;font-weight:700;}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.steps{display:flex;gap:6px;margin-bottom:22px;}
+.steps>div{flex:1;height:4px;border-radius:3px;background:var(--border);overflow:hidden;}
+.steps>div.done{background:var(--grad);}
+.steps>div.now{position:relative;}
+.steps>div.now::after{content:'';position:absolute;inset:0;background:var(--grad);animation:pulse 1.6s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.4;}50%{opacity:1;}}
+.steps[hidden]{display:none;}
+.passage{font-size:22px;line-height:1.5;font-weight:600;color:var(--tp);background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin:6px 0 4px;}
+.qline{font-size:16px;color:var(--ts);margin:16px 0 10px;}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 12px;border-radius:50px;letter-spacing:.01em;}
+.chip.good{background:var(--good-bg);color:var(--good);border:1px solid var(--good-bd);}
+.chip.warn{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-bd);}
+.chip.info{background:var(--grad-soft);color:var(--cyan);border:1px solid var(--border);}
+.result-card{border-radius:var(--r);padding:18px 20px;margin-top:14px;border:1px solid var(--border);background:var(--card);}
+.result-card.good{border-color:var(--good-bd);background:var(--good-bg);}
+.result-card.warn{border-color:var(--warn-bd);background:var(--warn-bg);}
+.result-card p{color:var(--tp);}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 8px;}
+.tile{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;}
+.tile .n{font-size:28px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;}
+.tile .l{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--tm);margin-top:6px;}
+.hm-row{margin-bottom:16px;}
+.hm-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:6px;font-size:14px;}
+.hm-head .pct{color:var(--ts);white-space:nowrap;font-variant-numeric:tabular-nums;}
+.hm-bar{height:12px;border-radius:6px;background:rgba(0,0,0,.35);overflow:hidden;}
+.hm-bar>div{height:100%;border-radius:6px;background:var(--grad);width:0;transition:width .8s cubic-bezier(.4,0,.2,1);}
+.pen{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px;}
+.pen .p{flex:1;min-width:150px;border:1px solid var(--warn-bd);background:var(--warn-bg);border-radius:12px;padding:14px 16px;}
+.pen .p .v{font-size:24px;font-weight:800;color:var(--warn);}
+.mt{margin-top:16px;}
+.fade{animation:fade .45s ease both;}
+@keyframes fade{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@media(max-width:560px){.tiles{grid-template-columns:1fr;}.wrap{padding:16px 16px 48px;}.passage{font-size:19px;}}
+</style>
+</head>
+<body>
+<div class="aurora"><div class="orb orb1"></div><div class="orb orb2"></div></div>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span><span>Language Lab<small>where mixed language breaks reading</small></span></div>
+    <div class="seg" id="modeseg" hidden><button id="mStudent" class="on">Student</button><button id="mTeacher">Teacher report</button></div>
+  </div>
+  <div class="steps" id="steps" hidden></div>
+  <div id="app"></div>
+</div>
+<canvas id="cardCanvas" width="1080" height="1080" style="display:none"></canvas>
+<script>
+(function(){
+  "use strict";
+  const $=id=>document.getElementById(id);
+  const app=$("app"), stepsEl=$("steps");
+
+  /* ---- Conditions: the three forms Ramazan's research measured ----
+     kz    = pure Kazakh (Cyrillic)  -> the baseline
+     cs    = code-switched Kazakh-Russian (KazSwitch: the code-switching penalty)
+     latin = Kazakh in official 2021 Latin (Alphabet Tax: the script penalty)      */
+  const COND=["kz","cs","latin"];
+  const CLABEL={kz:"Pure Kazakh",cs:"Code-switched",latin:"Latin script"};
+
+  /* ---- Items ----
+     DEMO SET. All three passages per item are REAL, verbatim from the KRCS corpus
+     (madrugado/KRCS, CC-BY-SA-4.0); the Latin form is the deterministic official-2021
+     transliteration of the pure-Kazakh sentence. The answer is an OBJECTIVE number
+     present identically in every form, so grading needs no native judgment. The short
+     Kazakh question is a DEMO stand-in pending Ramazan's native QA-tag (same firewall as
+     the research lane): a real class uses the Ramazan-verified item set.  */
+  const ITEMS_A=[
+    {id:"KRCS-1",  ans:"24", q:"Жарнама қанша сағат тұрмады?",
+      kz:"Жарнама тұрмайды. Ең болмаса 24 сағат тұрмады. Zello-ға салып жіберемін парақшаңызды.",
+      cs:"Реклама не стойт хотя бы 24 сағат тұрмады, Zellоға салып жіберем парақшаңызды",
+      latin:"Jarnama tūrmaidy. Eñ bolmasa 24 sağat tūrmady. Zello-ğa salyp jıberemın paraqşañyzdy."},
+    {id:"KRCS-50", ans:"2",  q:"Ұлы қанша тілді жақсы түсінеді?",
+      kz:"Балабақшаны орысша бітірдік, мектеп қазақша, бұйырса. Үйде қазақша, 2 тілді жақсы түсінетін сиықты ұлым.",
+      cs:"садик орысша битирдик школ казакша буйырса  уйде казакша вроде 2тилди жаксы тусинеди улым.",
+      latin:"Balabaqşany orysşa bıtırdık, mektep qazaqşa, būiyrsa. Üide qazaqşa, 2 tıldı jaqsy tüsınetın siyqty ūlym."},
+    {id:"KRCS-53", ans:"6",  q:"Қанша ата-ана сұрады?",
+      kz:"Сілтемелерді жібердім, 6 ата-ана сұрап жатырған соң, топқа жібердім.",
+      cs:"Скинула ссылки, 6 ата ана сурап жаткансоң группага жибердим",
+      latin:"Sıltemelerdı jıberdım, 6 ata-ana sūrap jatyrğan soñ, topqa jıberdım."},
+    {id:"KRCS-70", ans:"3",  q:"Күніне неше рет себезгіге кіреді?",
+      kz:"Себезгіге күніне 3 рет кіремін ғой, мүмкін емес қой.",
+      cs:"Душқа күніне 3 рет кірем ғо, невозможно ғо",
+      latin:"Sebezgıge künıne 3 ret kıremın ğoi, mümkın emes qoi."},
+    {id:"KRCS-99", ans:"8",  q:"Қанша миллион оқырман жиналды?",
+      kz:"8 миллион оқырманды қалай тез жинап алдыңыз. Ақша беріп, жинатып алған ғой.",
+      cs:"8 млн подписчикті қалай тез жинап алдыңыз Ақша беріп жинатып алған ғой",
+      latin:"8 million oqyrmandy qalai tez jinap aldyñyz. Aqşa berıp, jinatyp alğan ğoi."},
+    {id:"KRCS-78", ans:"100",q:"Неше жасқа дейін өмір сүруге тілек айтылды?",
+      kz:"Жарайсың, сынаққа сынбай, тек алға жүрдіңіз. Алла еңбекке қарап нәтижесін берген шығар! 100 жасаңыз, ауырмаңыз ешқашан!",
+      cs:"Молодец, сынаққа сынбай тек алға жүрдіңіз. Алла еңбекке қарап нәтижесін берген шығар! 100 жасаңыз, ауырмаңыз ешқашан!",
+      latin:"Jaraisyñ, synaqqa synbai, tek alğa jürdıñız. Alla eñbekke qarap nätijesın bergen şyğar! 100 jasañyz, auyrmañyz eşqaşan!"},
+    {id:"KRCS-159",ans:"11", q:"Нешінші сыныпты бітіргенше киеді?",
+      kz:"Түк болмайды 11 бітіргенше киеді ғой дейтін еді",
+      cs:"ни чё 11 бітіргенше киеді ғо дейтін ед",
+      latin:"Tük bolmaidy 11 bıtırgenşe kiedı ğoi deitın edı"},
+    {id:"KRCS-291",ans:"5000",q:"Қазір қанша теңгеге дым келмейді?",
+      kz:"Дұрыс айтасыз, қазір 5000 теңгеге дым келмейді. Бір жылға тіптен жетпейді.",
+      cs:"Дурыс айтасыз казир 5000тг дым келмеиды Бир жылга тем более жетпейды",
+      latin:"Dūrys aitasyz, qazır 5000 teñgege dym kelmeidı. Bır jylğa tıpten jetpeidı."},
+    {id:"KRCS-311",ans:"300",q:"Жалақыны кемінде қанша мың теңге қылу керек?",
+      kz:"Кара жұмысшылардың жалақысын көтеру керек ғой.Кемінде 300 мын қылып",
+      cs:"Кара жумысшылардын зарплатын котеру керек гой.Кеми 300 мын кылып",
+      latin:"Kara jūmysşylardyñ jalaqysyn köteru kerek ğoi.Kemınde 300 myn qylyp"}
+  ];
+
+  /* ---- Form B: the RETEST set. Different sentences, same three forms + number-answer design.
+     A student who merely remembered Form A cannot pass Form B; a student whose reading genuinely
+     changed passes it in either dress. Same real-KRCS + real-transliterator + demo-question rules. */
+  const ITEMS_B=[
+    {id:"KRCS-B1", ans:"2",  q:"Неше сағат ішінде жеткізеді?",
+      kz:"Жеткізу тегін, 2 сағат ішінде жеткізіп береміз.",
+      cs:"Доставка тегін 2 сағат ішінде жеткізіп беремиз",
+      latin:"Jetkızu tegın, 2 sağat ışınde jetkızıp beremız."},
+    {id:"KRCS-B2", ans:"85", q:"Неше мың теңге туралы айтылған?",
+      kz:"85 мың неге келеді? Салықтың бағасын көтеруге бұлардікі.",
+      cs:"85мың неге келеді. Налогтың бағасының көтеруге бұлардікі",
+      latin:"85 myñ nege keledı? Salyqtyñ bağasyn köteruge būlardıkı."},
+    {id:"KRCS-B3", ans:"649",q:"Қанша миллиард қалтаға кетті?",
+      kz:"649 млрд қалтаға кетті ғой шашамен.",
+      cs:"649млрд қалтаға кеттіғо примерн",
+      latin:"649 mlrd qaltağa kettı ğoi şaşamen."},
+    {id:"KRCS-B4", ans:"2",  q:"Неше жылда шығады?",
+      kz:"2 жылда шығып келеді жақсы тәртіп үшін.",
+      cs:"2 жылда шығып келеді за хороший поведение",
+      latin:"2 jylda şyğyp keledı jaqsy tärtıp üşın."},
+    {id:"KRCS-B5", ans:"4",  q:"Неше баласы бар?",
+      kz:"Мен де декреттік демалыстамын, 4 балам бар.",
+      cs:"Тоже на декретном , 4 балам бар",
+      latin:"Men de dekrettık demalystamyn, 4 balam bar."},
+    {id:"KRCS-B6", ans:"100",q:"Неше теңгеден жинайтын еді?",
+      kz:"Есіңізде ме, 100 теңгеден жинап, туған күнге сыйлықтар алушы едік қой.",
+      cs:"Помните, 100т жинап туган кунге подароктар алушы едик кой",
+      latin:"Esıñızde me, 100 teñgeden jinap, tuğan künge syilyqtar aluşy edık qoi."},
+    {id:"KRCS-B7", ans:"7",  q:"Клубқа бармағалы неше жыл болды?",
+      kz:"Ой, мен клубқа бармағалы 7 жыл болды.",
+      cs:"Ой мен клубқа бармағалы 7 лет как)",
+      latin:"Oi, men klubqa barmağaly 7 jyl boldy."},
+    {id:"KRCS-B8", ans:"15", q:"Неше сағат қосты?",
+      kz:"Аудиторлық сағат қостыртты білім бөлімі, сол үшін 15 сағат қостым.",
+      cs:"аудиторный сағат қостыртты учеб отд, сол үшін 15 сағат қостым",
+      latin:"Auditorlyq sağat qostyrtty bılım bölımı, sol üşın 15 sağat qostym."},
+    {id:"KRCS-B9", ans:"10", q:"Неше күннен кейін келеді?",
+      kz:"Нақты уақытты сұрамадым, 10 күннен кейін келетінін айтты, бітті.",
+      cs:"точно уакытын сурамадым, 10 куннен кеин келеди деп айтты и все",
+      latin:"Naqty uaqytty sūramadym, 10 künnen keiın keletının aitty, bıttı."}
+  ];
+  let ITEMS=ITEMS_A;  // set to ITEMS_B below when ?form=b (the post session)
+
+  /* ---- session store (no accounts, no backend needed for the demo) ---- */
+  const QS=new URLSearchParams(location.search);
+  const DEMO=!QS.get("store")&&QS.get("teacher")===null&&!QS.get("code");
+  const FORM=(QS.get("form")||"").toUpperCase()==="B"?"B":"A";  // session 2 (post) uses ?form=b
+  if(FORM==="B")ITEMS=ITEMS_B;
+  let token="";
+  const Store=(function(){
+    const ep=QS.get("store");
+    const url=(code,data)=>{let u=ep+(ep.indexOf("?")<0?"?":"&")+"code="+encodeURIComponent(code);if(data)u+="&data="+encodeURIComponent(JSON.stringify(data));return u;};
+    return {
+      submit(code,rec){if(ep)return fetch(url(code,rec)).then(()=>true);const k="llab:"+code,cur=JSON.parse(localStorage.getItem(k)||"[]");cur.push(rec);localStorage.setItem(k,JSON.stringify(cur));return Promise.resolve(true);},
+      load(code){if(ep)return fetch(url(code)).then(r=>r.json()).then(j=>Array.isArray(j)?j:(j&&j.rows)||[]);return Promise.resolve(JSON.parse(localStorage.getItem("llab:"+code)||"[]"));}
+    };
+  })();
+  function mrand(n){const x=Math.sin(n*99.13)*43758.5453;return x-Math.floor(x);}
+  // seed a demo class so BOTH the snapshot and the pre/post change view have data.
+  // Form A (pre) = big penalty; Form B (post) = penalty shrank, which is the measured outcome.
+  if(DEMO && !localStorage.getItem("llab:DEMO")){
+    const seed=[];
+    const mk=(s,acc,form)=>{const by={kz:[0,0],cs:[0,0],latin:[0,0]};
+      COND.forEach((c,ci)=>{const tot=3;let ok=0;for(let i=0;i<tot;i++){if(mrand(s*13+ci*5+i+(form==="B"?900:0))<acc[c])ok++;}by[c]=[ok,tot];});
+      return {by,form,token:String(s),ts:Date.now()-s*45000};};
+    for(let s=0;s<26;s++) seed.push(mk(s,{kz:.90,cs:.60,latin:.70},"A"));
+    for(let s=0;s<24;s++) seed.push(mk(s,{kz:.92,cs:.82,latin:.85},"B"));
+    localStorage.setItem("llab:DEMO",JSON.stringify(seed));
+  }
+
+  let classCode=(QS.get("code")||"").toUpperCase();
+  let order=[], iIdx=0, by={kz:[0,0],cs:[0,0],latin:[0,0]};
+
+  function progress(step){if(step<0){stepsEl.hidden=true;return;}stepsEl.hidden=false;stepsEl.innerHTML=ITEMS.map((_,i)=>`<div class="${i<step?'done':i===step?'now':''}"></div>`).join("");}
+  function show(html){app.innerHTML=html;app.firstElementChild&&app.firstElementChild.classList.add("fade");}
+
+  /* ---- data export + share (added features) ---- */
+  function dl(name,text,type){const b=new Blob([text],{type:type||"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);}
+  function exportCSV(rows){
+    const head=["form","seat","kz_ok","kz_tot","cs_ok","cs_tot","latin_ok","latin_tot","ts"];
+    const g=(r,c)=>((r.by&&r.by[c])||[0,0]);
+    const lines=[head.join(",")];
+    (rows||[]).forEach(r=>lines.push([r.form||"A",r.token||"",g(r,"kz")[0],g(r,"kz")[1],g(r,"cs")[0],g(r,"cs")[1],g(r,"latin")[0],g(r,"latin")[1],r.ts||""].join(",")));
+    dl("language-lab-"+(classCode||"class")+".csv",lines.join("\n"));
+  }
+  function addCsvBtn(rows){const ctl=document.querySelector(".ctl");if(!ctl||!rows||!rows.length)return;const b=document.createElement("button");b.className="btn";b.textContent="Export CSV";b.onclick=()=>exportCSV(rows);ctl.appendChild(b);}
+  function shareResult(kz,cs,la){
+    const c=$("cardCanvas"),x=c.getContext("2d"),W=1080,H=1080,F="'Inter',-apple-system,Segoe UI,Roboto,Arial,sans-serif";
+    x.fillStyle="#080a10";x.fillRect(0,0,W,H);
+    const bg=x.createLinearGradient(0,0,W,H);bg.addColorStop(0,"rgba(99,102,241,.32)");bg.addColorStop(.5,"rgba(139,92,246,.16)");bg.addColorStop(1,"rgba(34,211,238,.2)");x.fillStyle=bg;x.fillRect(0,0,W,H);
+    x.fillStyle="#0d1017";x.strokeStyle="rgba(255,255,255,.14)";x.lineWidth=3;x.beginPath();x.roundRect(60,60,W-120,H-120,44);x.fill();x.stroke();
+    x.textAlign="center";
+    x.fillStyle="#22d3ee";x.font="700 38px "+F;x.fillText("LANGUAGE LAB · MY READING",W/2,170);
+    const vals=[["Pure Kazakh",kz,"#eef2fb"],["Code-switched",cs,"#fbbf24"],["Latin script",la,"#22d3ee"]];
+    vals.forEach((v,i)=>{const cx=W/2+(i-1)*300;x.fillStyle=v[2];x.font="800 120px "+F;x.fillText(v[1]==null?"–":v[1]+"%",cx,430);
+      x.fillStyle="#aab3c7";x.font="500 34px "+F;x.fillText(v[0],cx,485);});
+    const base=kz,worst=Math.min(cs==null?100:cs,la==null?100:la);
+    const pen=base!=null?Math.max(0,base-worst):0;
+    x.fillStyle="#fff";x.font="800 130px "+F;x.fillText(pen+" pp",W/2,700);
+    x.fillStyle="#aab3c7";x.font="500 40px "+F;x.fillText("comprehension lost to the surface form",W/2,760);
+    x.fillStyle="#727c92";x.font="400 30px "+F;x.fillText("same meaning every time — only the writing changed",W/2,870);
+    x.fillStyle="#8b93a6";x.font="600 32px "+F;x.fillText("measure yours →",W/2,950);
+    c.toBlob(b=>{const file=new File([b],"language-lab-result.png",{type:"image/png"});
+      if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:"Language Lab"}).catch(()=>{});return;}
+      const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="language-lab-result.png";document.body.appendChild(a);a.click();a.remove();},"image/png");
+  }
+
+  /* ---- intro ---- */
+  function intro(){
+    progress(-1);
+    show(`<div class="card">
+      <div class="eyebrow">Reading · Kazakh${FORM==="B"?" · Session 2 of 2":""}</div>
+      <h1>Read ${ITEMS.length} sentences. Find where the <span class="grad-text">mixing</span> loses you.</h1>
+      ${FORM==="B"?`<div class="result-card" style="margin-bottom:16px"><span class="chip info">Retest</span><p class="mt" style="margin-top:8px">New sentences, a few weeks on. Enter the <b style="color:var(--tp)">same seat number</b> you used last time so we can see if the gap closed.</p></div>`:""}
+      <p class="lead" style="margin-bottom:18px;">Each sentence is real. Some are pure Kazakh, some mix in Russian, some are written in the Latin alphabet. Answer the small question under each one. The lab reads which form your comprehension drops on, from your answers, not from a guess.</p>
+      <label class="fld">Class code from your teacher</label>
+      <input class="txt" id="code" maxlength="8" autocapitalize="characters" placeholder="e.g. KAZ10" value="${classCode}" style="margin-bottom:12px;">
+      <label class="fld">Seat number${FORM==="B"?" (same as last time)":" (for the retest, optional)"}</label>
+      <input class="txt" id="tok" maxlength="6" autocomplete="off" inputmode="numeric" placeholder="e.g. 12" value="${token}" style="margin-bottom:8px;">
+      <div id="cerr" style="color:var(--bad);font-size:13px;min-height:18px;margin-bottom:10px;"></div>
+      <button class="btn btn-primary btn-lg" id="start">Start reading &rarr;</button>
+    </div>`);
+    const inp=$("code");
+    $("start").onclick=()=>{const v=(inp.value||"").trim().toUpperCase();if(!v){$("cerr").textContent="Enter the class code your teacher put on the board.";return;}if(FORM==="B"&&!(($("tok").value)||"").trim()){$("cerr").textContent="Session 2 needs the same seat number you used last time.";return;}classCode=v;token=(($("tok").value)||"").trim();begin();};
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter")$("start").click();});
+  }
+
+  function begin(){
+    // counterbalance: shuffle items, assign a rotating condition with a random per-student offset,
+    // so each student sees each sentence in exactly ONE form and the class covers every form.
+    order=ITEMS.map((it,i)=>i);
+    for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+    const off=Math.floor(Math.random()*3);
+    order=order.map((idx,k)=>({idx,cond:COND[(k+off)%3]}));
+    iIdx=0; by={kz:[0,0],cs:[0,0],latin:[0,0]};
+    item();
+  }
+
+  /* ---- one reading item ---- */
+  function item(){
+    progress(iIdx);
+    const {idx,cond}=order[iIdx], it=ITEMS[idx];
+    show(`<div class="card">
+      <div class="eyebrow">Sentence ${iIdx+1} of ${ITEMS.length}</div>
+      <div class="passage" dir="auto">${it[cond]}</div>
+      <div class="qline">${it.q}</div>
+      <input class="txt" id="ans" inputmode="numeric" autocomplete="off" placeholder="Type the number" style="margin-bottom:8px;">
+      <div id="aerr" style="color:var(--bad);font-size:13px;min-height:18px;margin-bottom:8px;"></div>
+      <button class="btn btn-primary" id="go">Answer &rarr;</button>
+      <div id="fb"></div>
+    </div>`);
+    const inp=$("ans");inp.focus();
+    const submit=()=>{
+      const raw=(inp.value||"").trim();
+      if(!raw){$("aerr").textContent="Type the number from the sentence.";return;}
+      const norm=raw.replace(/\D+/g,"");
+      const ok=norm===it.ans;
+      by[cond][1]++; if(ok)by[cond][0]++;
+      inp.disabled=true;$("go").disabled=true;
+      $("fb").innerHTML=`<div class="result-card ${ok?'good':'warn'} mt"><span class="chip ${ok?'good':'warn'}">${ok?'Correct':'Missed'}</span> <span class="mut" style="margin-left:6px">Form: ${CLABEL[cond]}</span><p class="mt" style="margin-top:10px">${ok?'You pulled the fact straight out.':('The sentence says <b style="color:var(--tp)">'+it.ans+'</b>. It was there, just harder to reach in this form.')}</p></div><button class="btn btn-primary mt" id="nx">${iIdx+1<ITEMS.length?'Next sentence &rarr;':'See your result &rarr;'}</button>`;
+      $("nx").onclick=()=>{iIdx++;iIdx<ITEMS.length?item():result();};
+    };
+    $("go").onclick=submit;
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!inp.disabled)submit();});
+  }
+
+  const pct=a=>a[1]?Math.round(a[0]/a[1]*100):null;
+
+  /* ---- student result ---- */
+  function result(){
+    progress(ITEMS.length);
+    const kz=pct(by.kz), cs=pct(by.cs), la=pct(by.latin);
+    const base=kz==null?null:kz;
+    let lines=[];
+    if(base!=null && cs!=null && cs<base) lines.push(`Mixing Russian in cost you here: pure Kazakh ${kz}%, code-switched ${cs}%.`);
+    if(base!=null && la!=null && la<base) lines.push(`Latin script slowed you: pure Kazakh ${kz}%, Latin ${la}%.`);
+    const body = lines.length
+      ? `<div class="result-card warn"><span class="chip warn">Your reading penalty</span><p class="mt">${lines.join(" ")}</p><p class="mut mt" style="margin-top:10px">The meaning was identical every time. Only the form changed, and that is what moved your score. This is the same effect Ramazan's research found in AI models, measured now on a reader.</p></div>`
+      : `<div class="result-card good"><span class="chip good">Steady across forms</span><p class="mt">Mixing and Latin script did not knock your comprehension down. You read the meaning through the surface.</p></div>`;
+    show(`<div class="card">
+      <div class="eyebrow">Your result</div>
+      <h2>How the <span class="grad-text">form</span> hit your reading</h2>
+      <div class="tiles">
+        <div class="tile"><div class="n">${kz==null?'–':kz+'%'}</div><div class="l">Pure Kazakh</div></div>
+        <div class="tile"><div class="n">${cs==null?'–':cs+'%'}</div><div class="l">Code-switched</div></div>
+        <div class="tile"><div class="n">${la==null?'–':la+'%'}</div><div class="l">Latin script</div></div>
+      </div>
+      ${body}
+      <div id="change"></div>
+      <div class="mut mt" id="sent" style="margin-top:16px">Adding your run to the class total…</div>
+      <div class="ctl mt" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-primary" id="share">Share my result</button><button class="btn" id="again">Read again</button></div></div>`);
+    $("again").onclick=intro;
+    $("share").onclick=()=>shareResult(kz,cs,la);
+    Store.submit(classCode,{by,form:FORM,token,ts:Date.now()}).then(()=>{$("sent").textContent="Counted in your class total. Nothing identifying you was sent.";})
+      .catch(()=>{const s=$("sent");s.style.color="var(--bad)";s.textContent="Could not reach the class total. Show this screen to your teacher.";});
+    // post session: show the student their own change since session 1 (matched by seat number)
+    if(FORM==="B"&&token){
+      Store.load(classCode).then(rows=>{
+        const pre=(rows||[]).filter(r=>(r.form||"A")==="A"&&String(r.token)===String(token)).slice(-1)[0];
+        if(!pre||!pre.by)return;
+        const f=a=>a&&a[1]?a[0]/a[1]:null;
+        const pk=f(pre.by.kz),pc=f(pre.by.cs),pl=f(pre.by.latin),nk=f(by.kz),nc=f(by.cs),nl=f(by.latin);
+        const r2=[];
+        if(pk!=null&&pc!=null&&nk!=null&&nc!=null)r2.push(["mixing Russian",Math.round((pk-pc)*100),Math.round((nk-nc)*100)]);
+        if(pk!=null&&pl!=null&&nk!=null&&nl!=null)r2.push(["Latin script",Math.round((pk-pl)*100),Math.round((nk-nl)*100)]);
+        if(!r2.length)return;
+        const html=r2.map(([name,pre_,now_])=>{const better=now_<pre_;return `<p class="mt" style="margin-top:6px">Your ${name} gap: <b style="color:var(--tp)">${pre_}pp</b> before &rarr; <b style="color:var(--${better?'good':'warn'})">${now_}pp</b> now${better?', it closed.':'.'}</p>`;}).join("");
+        $("change").innerHTML=`<div class="result-card ${r2.every(r=>r[2]<=r[1])?'good':'warn'} mt"><span class="chip info">Since last time · seat ${token}</span>${html}</div>`;
+      }).catch(()=>{});
+    }
+  }
+
+  /* ---- teacher ---- */
+  function teacherEntry(){
+    progress(-1);
+    show(`<div class="card"><div class="eyebrow">Teacher view</div><h2>Class report</h2>
+      <p class="lead" style="margin-bottom:16px">Enter the class code you gave your students. You will see how much comprehension the whole room loses when the language mixes or switches to Latin.</p>
+      <label class="fld">Class code</label>
+      <input class="txt" id="tcode" maxlength="8" autocapitalize="characters" placeholder="e.g. KAZ10" value="${classCode||(DEMO?'DEMO':'')}" style="margin-bottom:12px">
+      <button class="btn btn-primary btn-lg" id="tgo">Open report &rarr;</button></div>`);
+    $("tgo").onclick=()=>{const v=(($("tcode").value)||"").trim().toUpperCase();if(v){classCode=v;report();}};
+    $("tcode").addEventListener("keydown",e=>{if(e.key==="Enter")$("tgo").click();});
+  }
+  function report(){
+    show(`<div class="card"><p class="mut">Loading class ${classCode}…</p></div>`);
+    Store.load(classCode).then(renderReport).catch(()=>{show(`<div class="card"><p style="color:var(--bad)">Could not read class ${classCode}.</p><button class="btn mt" id="back">Try another code</button></div>`);$("back").onclick=teacherEntry;});
+  }
+  function renderReport(rows){
+    const N=rows.length;
+    if(!N){show(`<div class="card"><div class="eyebrow">Class ${classCode}</div><h2>Waiting for the first reader</h2><p class="lead mt">Nothing under this code yet. Students appear here as they finish.</p><div class="ctl mt"><button class="btn btn-primary" id="rf">Refresh</button> <button class="btn" id="back">Another code</button></div></div>`);$("rf").onclick=report;$("back").onclick=teacherEntry;return;}
+    const _A=rows.filter(r=>(r.form||"A")==="A"), _B=rows.filter(r=>r.form==="B");
+    if(_A.length&&_B.length)return renderChange(_A,_B);   // both sessions present -> the measured-change view
+    const agg={kz:[0,0],cs:[0,0],latin:[0,0]};
+    rows.forEach(r=>COND.forEach(c=>{const a=(r.by&&r.by[c])||[0,0];agg[c][0]+=a[0];agg[c][1]+=a[1];}));
+    const acc=c=>agg[c][1]?agg[c][0]/agg[c][1]:0;
+    const kz=acc("kz"),cs=acc("cs"),la=acc("latin");
+    const csPen=Math.round((kz-cs)*100), laPen=Math.round((kz-la)*100);
+    const bars=[["Pure Kazakh (baseline)",kz],["Code-switched",cs],["Latin script",la]];
+    show(`<div class="card">
+      <div class="eyebrow">Class ${classCode}</div>
+      <h2>What form does to this <span class="grad-text">room</span></h2>
+      <div class="tiles">
+        <div class="tile"><div class="n">${N}</div><div class="l">students finished</div></div>
+        <div class="tile"><div class="n">${Math.round(kz*100)}%</div><div class="l">pure Kazakh accuracy</div></div>
+        <div class="tile"><div class="n">${Math.round(Math.min(cs,la)*100)}%</div><div class="l">worst form</div></div>
+      </div>
+      <p class="mut" style="margin:4px 0 14px">Accuracy on the same meanings, by the form they were shown in.</p>
+      <div id="bars"></div>
+      <div class="pen">
+        <div class="p"><div class="v">${csPen>0?'−'+csPen:(''+(-csPen))} pp</div><div class="mut" style="margin-top:4px">Code-switching penalty (pure Kazakh minus code-switched)</div></div>
+        <div class="p"><div class="v">${laPen>0?'−'+laPen:(''+(-laPen))} pp</div><div class="mut" style="margin-top:4px">Script penalty (pure Kazakh minus Latin)</div></div>
+      </div>
+      <p class="mut mt">Anonymous. Runs are counted, students are never identified. Reads behaviour, never an AI grading a child's words.</p>
+      <div class="ctl mt"><button class="btn" id="rf">Refresh</button> <button class="btn" id="back">Another code</button></div></div>`);
+    $("bars").innerHTML=bars.map(([name,v])=>`<div class="hm-row"><div class="hm-head"><span>${name}</span><span class="pct">${Math.round(v*100)}%</span></div><div class="hm-bar"><div data-w="${Math.max(v*100,2)}"></div></div></div>`).join("");
+    requestAnimationFrame(()=>document.querySelectorAll(".hm-bar>div").forEach(d=>d.style.width=d.dataset.w+"%"));
+    $("rf").onclick=report;$("back").onclick=teacherEntry;addCsvBtn(rows);
+  }
+  function accSet(rows,c){let ok=0,t=0;(rows||[]).forEach(r=>{const a=(r.by&&r.by[c])||[0,0];ok+=a[0];t+=a[1];});return t?ok/t:0;}
+  function renderChange(A,B){
+    const pp=v=>Math.round(v*100);
+    const axes=[
+      {name:"Code-switching",pre:accSet(A,"kz")-accSet(A,"cs"),post:accSet(B,"kz")-accSet(B,"cs")},
+      {name:"Latin script",  pre:accSet(A,"kz")-accSet(A,"latin"),post:accSet(B,"kz")-accSet(B,"latin")}
+    ].map(a=>({...a,moved:a.pre-a.post})).sort((x,y)=>x.moved-y.moved); // least-moved (stubborn) first
+    const best=Math.max(0,pp(Math.max(...axes.map(a=>a.moved))));
+    show(`<div class="card">
+      <div class="eyebrow">Class ${classCode} · pre &rarr; post</div>
+      <h2>Did the gap actually <span class="grad-text">close</span>?</h2>
+      <div class="tiles">
+        <div class="tile"><div class="n">${A.length}</div><div class="l">session 1 (pre)</div></div>
+        <div class="tile"><div class="n">${B.length}</div><div class="l">session 2 (post)</div></div>
+        <div class="tile"><div class="n">${best} pp</div><div class="l">biggest gap closed</div></div>
+      </div>
+      <p class="mut" style="margin:4px 0 14px">Sorted by what moved LEAST. The stubborn gap at the top is what to teach into next.</p>
+      ${axes.map(a=>{const shrank=a.moved>=0;return `<div class="result-card ${shrank?'good':'warn'}"><div class="hm-head"><span><b style="color:var(--tp)">${a.name} penalty</b></span><span class="pct">${pp(a.pre)}pp &rarr; ${pp(a.post)}pp</span></div><p class="mt" style="margin-top:8px">${shrank?('Shrank '+pp(a.moved)+' pp over three weeks. The reading changed, not just the memory of the questions.'):('Grew '+pp(-a.moved)+' pp. It did not move, so it is the payload for the coming weeks.')}</p></div>`;}).join("")}
+      <p class="mut mt">Same class, two sessions ~3 weeks apart, on DIFFERENT sentences (a seat number links a student's two runs). Anonymous, no names.</p>
+      <div class="ctl mt"><button class="btn" id="rf">Refresh</button> <button class="btn" id="back">Another code</button></div></div>`);
+    $("rf").onclick=report;$("back").onclick=teacherEntry;addCsvBtn(A.concat(B));
+  }
+
+  /* ---- boot ---- */
+  const seg=$("modeseg");
+  if(DEMO){
+    seg.hidden=false;
+    $("mStudent").onclick=()=>{$("mStudent").classList.add("on");$("mTeacher").classList.remove("on");intro();};
+    $("mTeacher").onclick=()=>{$("mTeacher").classList.add("on");$("mStudent").classList.remove("on");teacherEntry();};
+  }
+  if(QS.get("teacher")!==null){classCode?report():teacherEntry();}
+  else{intro();}
+})();
+</script>
+</body>
+</html>
