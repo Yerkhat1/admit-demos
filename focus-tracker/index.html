@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Focus Tracker — study, tracked</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -13,97 +13,128 @@
       <p class="tagline">Run a focus session. Build the chain. Watch your subjects.</p>
     </header>
 
-    <!-- ============ FOCUS SESSION (the active core) ============ -->
-    <section class="card focus" id="focus-card">
-      <div class="focus-setup" id="focus-setup">
-        <div class="field">
-          <label>Subject</label>
-          <div class="chips" id="subject-chips"></div>
-          <div class="add-subject">
-            <input type="text" id="new-subject" maxlength="20" placeholder="+ add subject" />
-            <button id="add-subject-btn" class="ghost-btn">Add</button>
+    <!-- ============ CHAIN NUDGE (the "don't break the chain" heartbeat) ============ -->
+    <div id="chain-nudge" class="chain-nudge" role="status" hidden></div>
+
+    <!-- ============ TOP GRID: focus session | today + streaks + level ============ -->
+    <div class="grid-top">
+
+      <!-- FOCUS SESSION (the active core) -->
+      <section class="card focus" id="focus-card">
+        <div class="focus-setup" id="focus-setup">
+          <div class="field">
+            <label>Subject</label>
+            <div class="chips" id="subject-chips"></div>
+            <div class="add-subject">
+              <input type="text" id="new-subject" maxlength="20" placeholder="+ add subject" />
+              <button id="add-subject-btn" class="ghost-btn">Add</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Focus length</label>
+            <div class="chips" id="duration-chips">
+              <button class="chip" data-min="25">25 min</button>
+              <button class="chip active" data-min="45">45 min</button>
+              <button class="chip" data-min="60">60 min</button>
+              <button class="chip" data-min="90">90 min</button>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <label>Focus length</label>
-          <div class="chips" id="duration-chips">
-            <button class="chip" data-min="25">25 min</button>
-            <button class="chip active" data-min="45">45 min</button>
-            <button class="chip" data-min="60">60 min</button>
-            <button class="chip" data-min="90">90 min</button>
+
+        <div class="timer-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52" />
+            <circle class="ring-fg" id="timer-ring" cx="60" cy="60" r="52" />
+          </svg>
+          <div class="timer-center">
+            <div class="timer-time" id="timer-time">45:00</div>
+            <div class="timer-label" id="timer-label">Ready to focus</div>
           </div>
         </div>
-      </div>
 
-      <div class="timer-wrap">
-        <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
-          <circle class="ring-bg" cx="60" cy="60" r="52" />
-          <circle class="ring-fg" id="timer-ring" cx="60" cy="60" r="52" />
-        </svg>
-        <div class="timer-center">
-          <div class="timer-time" id="timer-time">45:00</div>
-          <div class="timer-label" id="timer-label">Ready to focus</div>
+        <div class="focus-controls">
+          <button id="start-btn" class="primary-btn">▶ Start focus</button>
+          <button id="pause-btn" class="secondary-btn" hidden>❚❚ Pause</button>
+          <button id="end-btn" class="ghost-btn" hidden>End &amp; log</button>
         </div>
-      </div>
+      </section>
 
-      <div class="focus-controls">
-        <button id="start-btn" class="primary-btn">▶ Start focus</button>
-        <button id="pause-btn" class="secondary-btn" hidden>❚❚ Pause</button>
-        <button id="end-btn" class="ghost-btn" hidden>End &amp; log</button>
-      </div>
-    </section>
+      <!-- RIGHT COLUMN -->
+      <div class="col">
+        <!-- TODAY (goal ring) -->
+        <section class="card today">
+          <svg class="ring small" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-bg" cx="60" cy="60" r="52" />
+            <circle class="ring-goal" id="goal-ring" cx="60" cy="60" r="52" />
+          </svg>
+          <div class="today-info">
+            <div class="today-head">
+              <h2>Today</h2>
+              <button id="goal-edit" class="ghost-btn tiny" title="Change daily goal">goal ✎</button>
+            </div>
+            <div class="today-big" id="today-min">0 min</div>
+            <div class="today-sub" id="today-sub">0 sessions · goal 120 min</div>
+            <div class="today-pct" id="goal-pct">0%</div>
+          </div>
+        </section>
 
-    <!-- ============ TODAY (goal ring) ============ -->
-    <section class="card today">
-      <svg class="ring small" viewBox="0 0 120 120" aria-hidden="true">
-        <circle class="ring-bg" cx="60" cy="60" r="52" />
-        <circle class="ring-goal" id="goal-ring" cx="60" cy="60" r="52" />
-      </svg>
-      <div class="today-info">
-        <div class="today-head">
-          <h2>Today</h2>
-          <button id="goal-edit" class="ghost-btn tiny" title="Change daily goal">goal ✎</button>
-        </div>
-        <div class="today-big" id="today-min">0 min</div>
-        <div class="today-sub" id="today-sub">0 sessions · goal 120 min</div>
-        <div class="today-pct" id="goal-pct">0%</div>
-      </div>
-    </section>
+        <!-- STREAK ROW -->
+        <section class="streaks">
+          <div class="streak-card">
+            <div class="num fire" id="current-streak">0</div>
+            <div class="label">day streak 🔥</div>
+          </div>
+          <div class="streak-card">
+            <div class="num" id="best-streak">0</div>
+            <div class="label">best streak</div>
+          </div>
+          <div class="streak-card">
+            <div class="num" id="week-count">0/7</div>
+            <div class="label">days this week</div>
+          </div>
+        </section>
 
-    <!-- ============ STREAK ROW ============ -->
-    <section class="streaks">
-      <div class="streak-card">
-        <div class="num fire" id="current-streak">0</div>
-        <div class="label">day streak 🔥</div>
+        <!-- LEVEL / XP -->
+        <section class="card level">
+          <div class="level-head">
+            <div>
+              <div class="level-name" id="level-name">Getting started</div>
+              <div class="card-head" style="margin:0"></div>
+            </div>
+            <div class="level-badge" id="level-badge">Lv 1</div>
+          </div>
+          <div class="level-bar"><i id="level-bar"></i></div>
+          <div class="level-sub" id="level-sub">Focus to earn XP. Every minute counts.</div>
+        </section>
       </div>
-      <div class="streak-card">
-        <div class="num" id="best-streak">0</div>
-        <div class="label">best streak</div>
-      </div>
-      <div class="streak-card">
-        <div class="num" id="week-count">0/7</div>
-        <div class="label">days this week</div>
-      </div>
-    </section>
+    </div>
 
-    <!-- ============ SUBJECT BREAKDOWN ============ -->
+    <!-- ============ MOMENTUM (14-day) ============ -->
     <section class="card">
-      <div class="card-head">
-        <h2>Time by subject</h2>
-        <div class="toggle" id="range-toggle">
-          <button class="active" data-range="week">This week</button>
-          <button data-range="all">All time</button>
-        </div>
-      </div>
-      <div id="subject-bars" class="subject-bars"></div>
+      <div class="card-head"><h2>Momentum</h2><span class="sub">last 14 days · minutes focused</span></div>
+      <div class="momentum" id="momentum"></div>
+      <div class="momentum-goal" id="momentum-goal"></div>
     </section>
 
-    <!-- ============ CHAIN ============ -->
-    <section class="card">
-      <div class="card-head"><h2>The chain</h2><span class="sub">last 28 days</span></div>
-      <div id="heatmap" class="heatmap" aria-label="Study history, last 28 days"></div>
-      <div class="legend"><span class="sq"></span>none <span class="sq low"></span>&lt;45m <span class="sq mid"></span>&lt;90m <span class="sq high"></span>90m+</div>
-    </section>
+    <!-- ============ SUBJECTS | CHAIN ============ -->
+    <div class="grid-2">
+      <section class="card">
+        <div class="card-head">
+          <h2>Time by subject</h2>
+          <div class="toggle" id="range-toggle">
+            <button class="active" data-range="week">This week</button>
+            <button data-range="all">All time</button>
+          </div>
+        </div>
+        <div id="subject-bars" class="subject-bars"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>The chain</h2><span class="sub">last 28 days</span></div>
+        <div id="heatmap" class="heatmap" aria-label="Study history, last 28 days"></div>
+        <div class="legend"><span class="sq"></span>none <span class="sq low"></span>&lt;45m <span class="sq mid"></span>&lt;90m <span class="sq high"></span>90m+</div>
+      </section>
+    </div>
 
     <!-- ============ STATS ============ -->
     <section class="stats">
@@ -118,7 +149,7 @@
       <div class="card-head"><h2>Recent sessions</h2></div>
       <ul id="recent-list" class="recent-list"></ul>
       <details class="manual">
-        <summary>+ Log a session I did offline</summary>
+        <summary>Log a session I did offline</summary>
         <div class="manual-form">
           <input type="text" id="m-subject" maxlength="20" placeholder="Subject" />
           <input type="number" id="m-minutes" min="1" max="600" placeholder="min" />
@@ -130,11 +161,17 @@
 
     <footer class="foot">
       <span id="foot-note">All data stays on this device.</span>
-      <button id="reset-btn" class="reset-btn">reset all</button>
+      <span class="foot-actions">
+        <button id="share-card" class="ghost-btn tiny">Share card</button>
+        <button id="export-csv" class="ghost-btn tiny">Export CSV</button>
+        <button id="reset-btn" class="reset-btn">reset all</button>
+      </span>
     </footer>
   </main>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <canvas id="cardCanvas" width="1080" height="1080" style="display:none"></canvas>
   <script src="app.js"></script>
+  <script src="features.js"></script>
 </body>
 </html>
