@@ -10,7 +10,7 @@
     --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.18);
     --ink:#eef4f8; --ts:#aebccb; --tm:#728296;
     --water:#38bdf8; --water2:#5eead4; --sand:#a9793f; --salt:#e9e2cf; --rust:#b4531f;
-    --power:#f6b93b; --crop:#54cf7c; --sea:#3aa9e0; --bad:#ef4444; --gold:#ffcf5a; --accent:#5eead4;
+    --power:#f6b93b; --crop:#54cf7c; --sea:#3aa9e0; --dust:#c98b4b; --bad:#ef4444; --gold:#ffcf5a; --accent:#5eead4;
     --grad-accent:linear-gradient(135deg,#7df0dc,#31c4e6 60%,#2f7fe0);
     --grad-gold:linear-gradient(135deg,#ffe08a,#f6b93b);
     --r:20px; --shadow:0 24px 60px rgba(0,0,0,.5);
@@ -74,6 +74,18 @@
   .mileflag .m{font-size:10.5px;color:#ffe6a8;background:rgba(246,185,59,.12);border:1px solid rgba(246,185,59,.3);
     border-radius:8px;padding:3px 9px;opacity:0;transform:translateX(-6px);transition:.3s}
   .mileflag .m.on{opacity:1;transform:none}
+  .dusthaze{position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .5s;
+    background:radial-gradient(70% 55% at 46% 62%,rgba(201,139,75,.34),transparent 70%)}
+
+  /* basin split strip */
+  .basins{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .bcard{padding:14px 15px}
+  .bcard .bt{display:flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--tm);font-weight:700}
+  .bcard .bt i{width:8px;height:8px;border-radius:2px;display:inline-block}
+  .bcard .bv{font-size:23px;font-weight:800;letter-spacing:-.02em;margin-top:7px;line-height:1}
+  .bcard .bv small{font-size:11.5px;font-weight:600;color:var(--ts);margin-left:3px}
+  .bcard .bmeta{font-size:11px;color:var(--tm);margin-top:6px;min-height:15px}
+  .bcard .bmeta b{color:var(--ts)}
 
   /* control deck */
   .deck{display:flex;flex-direction:column;gap:16px}
@@ -100,8 +112,25 @@
   input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
     background:#fff;border:3px solid var(--water);box-shadow:0 2px 8px rgba(0,0,0,.5)}
   input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--water)}
+  input[type=range].warm{background:linear-gradient(90deg,#4bd0c0,#f6b93b var(--f,20%),rgba(255,255,255,.09) var(--f,20%))}
+  input[type=range].warm::-webkit-slider-thumb{border-color:var(--power)}
+  input[type=range].warm::-moz-range-thumb{border-color:var(--power)}
+  input[type=range].split{background:linear-gradient(90deg,#5eead4,#38bdf8 var(--f,72%),#b4531f var(--f,72%),#e0842f)}
   .ends{display:flex;justify-content:space-between;font-size:10.5px;color:var(--tm);margin-top:5px}
-  .runrow{display:flex;gap:10px;margin-top:8px;flex-wrap:wrap}
+
+  /* dike toggle */
+  .dike{margin-top:16px;display:flex;align-items:center;gap:12px;cursor:pointer;
+    border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.02);transition:.15s;width:100%;text-align:left;font-family:inherit;color:var(--ink)}
+  .dike:hover{border-color:var(--line2)}
+  .dike.on{border-color:var(--gold);background:rgba(246,185,59,.08);box-shadow:0 0 0 1px rgba(246,185,59,.5) inset}
+  .dike .sw{width:44px;height:26px;border-radius:100px;background:rgba(255,255,255,.12);position:relative;flex:none;transition:.2s}
+  .dike.on .sw{background:var(--gold)}
+  .dike .sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+  .dike.on .sw::after{transform:translateX(18px)}
+  .dike .dl{font-weight:700;font-size:13.5px}
+  .dike .dl em{font-style:normal;display:block;color:var(--tm);font-weight:400;font-size:11px;margin-top:2px}
+
+  .runrow{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
   button.run{flex:1;min-width:150px;cursor:pointer;font-family:inherit;font-weight:800;font-size:15px;color:#042028;
     background:var(--grad-accent);border:none;border-radius:13px;padding:14px;
     box-shadow:0 12px 28px rgba(49,196,230,.34);transition:.15s}
@@ -162,6 +191,7 @@
   .cbox .ct{font-size:12.5px;font-weight:700;color:var(--ink)}
   .cbox .cu{font-size:10.5px;color:var(--tm);margin:2px 0 10px}
   .cbox .cu .gm{color:var(--gold);font-weight:700}
+  .cbox .cu .nn{color:var(--water2);font-weight:700}
   canvas{width:100%;height:auto;display:block}
 
   /* ---------- verdict + explain ---------- */
@@ -178,9 +208,9 @@
   details.exp summary::before{content:"▸";transition:.2s;display:inline-block}
   details.exp[open] summary::before{transform:rotate(90deg)}
   .eqwrap{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
-  @media(min-width:640px){ .eqwrap{grid-template-columns:1fr 1fr} }
+  @media(min-width:640px){ .eqwrap{grid-template-columns:1fr 1fr 1fr} }
   .eq{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
-  .eq .f{font-size:19px;font-weight:800;letter-spacing:.01em;margin-bottom:6px}
+  .eq .f{font-size:18px;font-weight:800;letter-spacing:.01em;margin-bottom:6px}
   .eq .f .op{color:var(--accent)}
   .eq .d{font-size:12.5px;color:var(--tm);line-height:1.5}
   .eq .d b{color:var(--ts)}
@@ -210,7 +240,7 @@
       <div class="glyph"></div>
       <div>
         <div class="bname">Upstream</div>
-        <div class="btag">The Aral Sea machine · a physics &amp; chemistry model of Central Asia's water</div>
+        <div class="btag">The Aral Sea machine · two rivers, two seas, one water budget</div>
       </div>
     </div>
     <div class="chip">Aral Basin · Systems Lab</div>
@@ -222,6 +252,7 @@
     <!-- SEA STAGE -->
     <section class="panel sea rise" aria-label="Aral Sea">
       <div class="grain"></div>
+      <div class="dusthaze" id="dusthaze"></div>
       <div class="hud">
         <div class="satlbl">◎ Satellite · Aral Sea basin</div>
         <div class="yearbox"><div class="yr num" id="yrNow">1960</div><div class="yl">simulated year</div></div>
@@ -239,29 +270,42 @@
           <filter id="soft"><feGaussianBlur stdDeviation="1.1"/></filter>
         </defs>
 
-        <!-- dead seabed (full 1960 extent) -->
-        <path id="bedN" d="M150,44 C186,42 210,60 207,80 C204,99 176,105 150,103 C126,101 110,92 110,74 C110,55 128,46 150,44 Z"
+        <radialGradient id="crust" cx="52%" cy="46%" r="70%">
+          <stop offset="0%" stop-color="#f3ecd9"/><stop offset="60%" stop-color="#e4d3ac"/><stop offset="100%" stop-color="#c9a86f"/>
+        </radialGradient>
+        <!-- Aral coastline (1960 extent). North = the Small Aral lobe; South = the Large Aral with its
+             deep western arm along the Ustyurt scarp and the broad shallow eastern basin. -->
+        <!-- dead seabed -->
+        <path id="bedN" d="M118,75 C119,59 139,50 163,52 C185,54 203,59 207,70 C211,81 199,92 181,96 C169,99 159,98 150,100 C140,102 127,101 121,92 C116,85 117,81 118,75 Z"
           fill="url(#seabed)" opacity=".92"/>
-        <path id="bedS" d="M140,116 C176,113 232,122 238,168 C243,208 226,236 228,272 C230,308 202,336 168,340 C149,342 130,333 118,314 C107,296 111,274 99,260 C80,241 95,214 91,190 C87,166 100,138 120,128 C126,120 132,117 140,116 Z"
+        <path id="bedS" d="M150,114 C177,112 201,117 214,131 C231,148 224,169 234,189 C245,211 237,240 223,262 C210,283 191,301 172,312 C161,319 150,321 150,317 C150,299 150,281 150,263 C132,272 115,262 109,243 C99,223 106,205 100,185 C94,165 103,139 119,127 C131,118 140,115 150,114 Z"
           fill="url(#seabed)" opacity=".92"/>
+        <!-- exposed salt crust (fades in as the sea dries) -->
+        <path id="crustS" d="M150,114 C177,112 201,117 214,131 C231,148 224,169 234,189 C245,211 237,240 223,262 C210,283 191,301 172,312 C161,319 150,321 150,317 C150,299 150,281 150,263 C132,272 115,262 109,243 C99,223 106,205 100,185 C94,165 103,139 119,127 C131,118 140,115 150,114 Z"
+          fill="url(#crust)" opacity="0"/>
         <!-- ghost 1960 shoreline -->
-        <path d="M150,44 C186,42 210,60 207,80 C204,99 176,105 150,103 C126,101 110,92 110,74 C110,55 128,46 150,44 Z"
-          fill="none" stroke="#cfe3ef" stroke-width="1.2" stroke-dasharray="4 5" opacity=".5"/>
-        <path d="M140,116 C176,113 232,122 238,168 C243,208 226,236 228,272 C230,308 202,336 168,340 C149,342 130,333 118,314 C107,296 111,274 99,260 C80,241 95,214 91,190 C87,166 100,138 120,128 C126,120 132,117 140,116 Z"
-          fill="none" stroke="#cfe3ef" stroke-width="1.2" stroke-dasharray="4 5" opacity=".5"/>
+        <path d="M118,75 C119,59 139,50 163,52 C185,54 203,59 207,70 C211,81 199,92 181,96 C169,99 159,98 150,100 C140,102 127,101 121,92 C116,85 117,81 118,75 Z"
+          fill="none" stroke="#cfe3ef" stroke-width="1.1" stroke-dasharray="4 5" opacity=".55"/>
+        <path d="M150,114 C177,112 201,117 214,131 C231,148 224,169 234,189 C245,211 237,240 223,262 C210,283 191,301 172,312 C161,319 150,321 150,317 C150,299 150,281 150,263 C132,272 115,262 109,243 C99,223 106,205 100,185 C94,165 103,139 119,127 C131,118 140,115 150,114 Z"
+          fill="none" stroke="#cfe3ef" stroke-width="1.1" stroke-dasharray="4 5" opacity=".55"/>
 
-        <!-- retreating water: North Aral -->
+        <!-- retreating water: North Aral (Syr Darya) -->
         <g id="waterNG">
-          <path id="waterN" d="M150,44 C186,42 210,60 207,80 C204,99 176,105 150,103 C126,101 110,92 110,74 C110,55 128,46 150,44 Z" fill="url(#wgrad)"/>
+          <path id="waterN" d="M118,75 C119,59 139,50 163,52 C185,54 203,59 207,70 C211,81 199,92 181,96 C169,99 159,98 150,100 C140,102 127,101 121,92 C116,85 117,81 118,75 Z" fill="url(#wgrad)"/>
         </g>
-        <!-- retreating water: South Aral (retreats toward the deep western basin) -->
+        <!-- Kok-Aral dike (appears when built) across the Berg Strait -->
+        <g id="dikeMark" opacity="0">
+          <line x1="133" y1="104" x2="169" y2="107" stroke="#ffcf5a" stroke-width="3" stroke-linecap="round"/>
+          <text class="basinlbl" x="151" y="119" text-anchor="middle" style="fill:#ffe6a8;opacity:.95">Kok-Aral dike</text>
+        </g>
+        <!-- retreating water: South Aral (Amu Darya; retreats into the deep western basin) -->
         <g id="waterSG">
-          <path id="waterS" d="M140,116 C176,113 232,122 238,168 C243,208 226,236 228,272 C230,308 202,336 168,340 C149,342 130,333 118,314 C107,296 111,274 99,260 C80,241 95,214 91,190 C87,166 100,138 120,128 C126,120 132,117 140,116 Z"
+          <path id="waterS" d="M150,114 C177,112 201,117 214,131 C231,148 224,169 234,189 C245,211 237,240 223,262 C210,283 191,301 172,312 C161,319 150,321 150,317 C150,299 150,281 150,263 C132,272 115,262 109,243 C99,223 106,205 100,185 C94,165 103,139 119,127 C131,118 140,115 150,114 Z"
             fill="url(#wgrad)" style="animation:shimmer 4s ease-in-out infinite"/>
-          <ellipse id="wglow" cx="112" cy="215" rx="34" ry="46" fill="#ffffff" opacity=".1" filter="url(#soft)"/>
+          <ellipse id="wglow" cx="106" cy="206" rx="22" ry="48" fill="#ffffff" opacity=".1" filter="url(#soft)"/>
         </g>
-        <text class="basinlbl" x="150" y="76" text-anchor="middle">North Aral</text>
-        <text class="basinlbl" x="150" y="232" text-anchor="middle">South Aral</text>
+        <text class="basinlbl" x="150" y="76" text-anchor="middle">North Aral · Syr Darya</text>
+        <text class="basinlbl" x="182" y="168" text-anchor="middle">South Aral · Amu Darya</text>
       </svg>
       <div class="caption" id="caption">Set a policy and press run. The dashed line is the sea's 1960 shore.</div>
     </section>
@@ -276,11 +320,19 @@
       <div class="panel pad rise">
         <div class="ctrl">
           <div class="head">
-            <div class="name">Irrigation withdrawal<em>water pulled to the cotton fields</em></div>
+            <div class="name">Irrigation withdrawal<em>water pulled from the rivers to the cotton fields</em></div>
             <div class="out"><span id="virr">70</span> <small>km³/yr</small></div>
           </div>
-          <input type="range" id="irr" min="0" max="110" step="5" value="70">
-          <div class="ends"><span>sea first</span><span>fields first</span></div>
+          <input type="range" id="irr" min="0" max="120" step="5" value="70">
+          <div class="ends"><span>seas first</span><span>fields first</span></div>
+        </div>
+        <div class="ctrl" style="margin-top:18px">
+          <div class="head">
+            <div class="name">Where the cotton is<em>share of that diversion taken from the Amu Darya (feeds the South Aral)</em></div>
+            <div class="out"><span id="vsplit">72</span> <small>% Amu</small></div>
+          </div>
+          <input type="range" id="split" class="split" min="0" max="100" step="5" value="72">
+          <div class="ends"><span>Syr / North</span><span>Amu / South</span></div>
         </div>
         <div class="ctrl" style="margin-top:18px">
           <div class="head">
@@ -290,6 +342,20 @@
           <input type="range" id="win" min="0" max="100" step="5" value="40">
           <div class="ends"><span>summer irrigation</span><span>winter power</span></div>
         </div>
+        <div class="ctrl" style="margin-top:18px">
+          <div class="head">
+            <div class="name">Climate warming<em>hotter air evaporates more of the sea each year</em></div>
+            <div class="out"><span id="vwarm">20</span> <small>%</small></div>
+          </div>
+          <input type="range" id="warm" class="warm" min="0" max="100" step="5" value="20">
+          <div class="ends"><span>stable climate</span><span>hot &amp; dry</span></div>
+        </div>
+
+        <button class="dike" id="dikeBtn" aria-pressed="false">
+          <div class="sw"></div>
+          <div class="dl">Build the Kok-Aral dike<em>a dam across the strait that keeps Syr Darya water in the North Aral — the real 2005 rescue</em></div>
+        </button>
+
         <div class="ctrl" style="margin-top:18px">
           <div class="head">
             <div class="name">Years to simulate</div>
@@ -308,6 +374,20 @@
     </section>
   </div>
 
+  <!-- BASIN SPLIT -->
+  <div class="basins">
+    <div class="panel bcard rise">
+      <div class="bt"><i style="background:var(--water2)"></i>North Aral · Syr Darya</div>
+      <div class="bv"><span id="bnPct">—</span><small>% of 1960 water</small></div>
+      <div class="bmeta" id="bnMeta">salinity —</div>
+    </div>
+    <div class="panel bcard rise">
+      <div class="bt"><i style="background:var(--rust)"></i>South Aral · Amu Darya</div>
+      <div class="bv"><span id="bsPct">—</span><small>% of 1960 water</small></div>
+      <div class="bmeta" id="bsMeta">salinity —</div>
+    </div>
+  </div>
+
   <!-- SCORE HERO -->
   <div class="scorewrap">
     <div class="panel scorecard rise">
@@ -315,7 +395,7 @@
       <div class="scoremeta">
         <div class="sname">Basin steward score</div>
         <div class="stitle" id="scoreTitle">Run a policy</div>
-        <div class="sdesc" id="scoreDesc">Balance three things at once: keep the sea alive, keep the lights on, feed the country. Beating the real history (which scored low) is the challenge.</div>
+        <div class="sdesc" id="scoreDesc">Balance three things at once: keep a sea alive, keep the lights on, feed the country. Saving even the North Aral counts. Beating the real history (which scored low) is the challenge.</div>
       </div>
     </div>
     <div class="subscores">
@@ -335,14 +415,14 @@
       <div class="gv" id="gCrop" style="color:var(--crop)">—</div>
       <div class="track"><div class="fillbar" id="fCrop" style="background:var(--crop)"></div></div>
       <div class="gs" id="sCrop">Mt cotton / year</div></div>
-    <div class="panel g rise"><div class="gl"><span class="gd" style="background:var(--sea)"></span>Sea level</div>
-      <div class="gv" id="gLevel" style="color:var(--sea)">—</div>
-      <div class="track"><div class="fillbar" id="fLevel" style="background:var(--sea)"></div></div>
-      <div class="gs" id="sLevel">metres</div></div>
-    <div class="panel g rise"><div class="gl"><span class="gd" id="dSalt" style="background:var(--crop)"></span>Salinity</div>
+    <div class="panel g rise"><div class="gl"><span class="gd" id="dSalt" style="background:var(--crop)"></span>Whole-sea salinity</div>
       <div class="gv" id="gSalt">—</div>
       <div class="track"><div class="fillbar" id="fSalt"></div></div>
       <div class="gs" id="sSalt">grams / litre</div></div>
+    <div class="panel g rise"><div class="gl"><span class="gd" id="dDust" style="background:var(--dust)"></span>Toxic dust risk</div>
+      <div class="gv" id="gDust" style="color:var(--dust)">—</div>
+      <div class="track"><div class="fillbar" id="fDust" style="background:var(--dust)"></div></div>
+      <div class="gs" id="sDust">salt storms from the dry bed</div></div>
   </div>
 
   <!-- SCRUBBER -->
@@ -356,14 +436,14 @@
 
   <!-- CHARTS -->
   <div class="charts">
-    <div class="panel pad cbox rise"><div class="ct">Water left in the sea</div>
+    <div class="panel pad cbox rise"><div class="ct">Water left in the seas</div>
       <div class="cu">km³ · started ~1064 in 1960 · <span class="gm">● measured</span></div>
       <canvas id="cVol" width="440" height="200"></canvas></div>
     <div class="panel pad cbox rise"><div class="ct">Sea area</div>
       <div class="cu">1000 km² · <span class="gm">● measured</span></div>
       <canvas id="cArea" width="440" height="200"></canvas></div>
-    <div class="panel pad cbox rise"><div class="ct">How salty it became</div>
-      <div class="cu">g/L · fishery dies past ~24 · <span class="gm">● measured</span></div>
+    <div class="panel pad cbox rise"><div class="ct">How salty each sea became</div>
+      <div class="cu">g/L · <span class="nn">— North</span> vs South · fishery dies past ~24 · <span class="gm">● measured</span></div>
       <canvas id="cSal" width="440" height="200"></canvas></div>
   </div>
 
@@ -379,60 +459,145 @@
         <div class="eq"><div class="f">E <span class="op">=</span> ρ·g·h·η·V</div>
           <div class="d"><b style="color:var(--power)">Hydro-electricity — physics.</b> Energy from falling water: density × gravity × dam head × turbine efficiency × the volume released. Release more in winter → more power, but that water never reaches the summer fields.</div></div>
         <div class="eq"><div class="f">C <span class="op">=</span> M / V</div>
-          <div class="d"><b style="color:var(--rust)">Salinity — chemistry.</b> Concentration = dissolved-salt mass ÷ water volume. Evaporation and irrigation remove fresh <i>water</i>; the <i>salt stays</i>. As the sea shrinks, C climbs — how the Aral went from ~10 g/L to over 70, and the fish died.</div></div>
+          <div class="d"><b style="color:var(--rust)">Salinity — chemistry.</b> Concentration = dissolved-salt mass ÷ water volume. Evaporation and irrigation remove fresh <i>water</i>; the <i>salt stays</i>. As a sea shrinks, C climbs — how the Aral went from ~10 g/L to over 70, and the fish died.</div></div>
+        <div class="eq"><div class="f">C ≤ C<span class="op">sat</span> → salt falls out</div>
+          <div class="d"><b style="color:var(--dust)">Saturation &amp; dust — chemistry.</b> Water can only hold so much salt. Past saturation the extra salt <i>precipitates</i> onto the drying bed as a white crust — and that exposed salt is what the wind lifts into the Aralkum's toxic dust storms.</div></div>
       </div>
       <div class="honest"><b>Honest note.</b> Upstream is an educational systems model on realistic, published-order numbers — it shows how the tradeoffs are shaped, it is not a validated forecast of any real year.</div>
-      <div class="srcline">Measured points &amp; milestones from published Aral Sea figures (area, volume, salinity 1960–2010; 1987 N/S split; 2005 Kok-Aral dam; 2014 eastern basin dried). <b>Source: Wikipedia — Aral Sea / North Aral Sea.</b></div>
+      <div class="srcline">Two rivers (Syr Darya ≈37, Amu Darya ≈79 km³/yr), 1960 sea ≈1,064 km³ / 68,000 km² / 10 g/L; measured area, volume &amp; salinity 1960–2010; 1987 N/S split; 2005 Kok-Aral dam; 2014 eastern basin dried. <b>Source: Wikipedia — Aral Sea / North Aral Sea.</b></div>
     </details>
   </section>
 
-  <footer><b>Upstream</b> · built around the real Aral Sea coastline · Central Asia's water, as a machine you can run</footer>
+  <footer><b>Upstream</b> · two rivers, two seas, one water budget · Central Asia's water, as a machine you can run</footer>
 </div>
 <div class="toast" id="toast"></div>
 <canvas id="cardCanvas" width="1080" height="1080" style="display:none"></canvas>
 
 <script>
-/* ===== coupled water / energy / salinity model (verified core) ===== */
-const P={V0:1064,A0:68000,L0:53,Lmin:25,C0:10,inflow:110,evapRate:1.0,riverSalt:1.0,losses:0.10,kPower:367.9,cropCoef:0.12};
+/* ============================================================
+   Upstream v4 — a TWO-BASIN coupled water / energy / salt model
+   North Aral fed by the Syr Darya, South Aral by the Amu Darya.
+   Salt mass is conserved with a solubility cap (precipitation).
+   ============================================================ */
+const P={
+  N:{V0:85,  A0:6000,  C0:10},   // North Aral (Small Aral) — Syr Darya
+  S:{V0:979, A0:62000, C0:10},   // South Aral (Large Aral) — Amu Darya
+  V0tot:1064, A0tot:68000, L0:53, Lmin:25,
+  syr:37, amu:79,                // natural river flow km³/yr
+  losses:0.10,                   // canal / delta losses
+  eCoef:1.02,                    // evaporation per 1000 km² of surface -> km³/yr
+  kPower:264, cropCoef:0.12,
+  riverSalt:0.32,                // g/L of salt carried in by the rivers
+  Csat:100                       // g/L saturation — salts precipitate past this
+};
 function seeded(n){let x=Math.sin(n*127.1+31.7)*43758.5453;return x-Math.floor(x);}
-function simulate(irrigation,winterShare,years,opts={}){
-  const s=[];let V=P.V0,M=P.C0*P.V0*1e12;
-  const ramp=opts.irrRamp||null;              // real-history mode ramps irrigation over time
-  for(let y=0;y<=years;y++){
-    const area=P.A0*Math.pow(Math.max(V,0)/P.V0,0.65);
-    const level=P.Lmin+(P.L0-P.Lmin)*Math.sqrt(Math.max(V,0)/P.V0);
-    const salinity=M/(Math.max(V,1)*1e12);
-    s.push({y,V:Math.max(V,0),area,level,salinity});
-    if(y===years)break;
-    const irrY = ramp ? ramp(y,years) : irrigation;
-    const I=P.inflow*(0.92+0.16*seeded(y+1)),R=I;
-    const Rw=winterShare*R,Rs=(1-winterShare)*R;
-    const delivered=Math.min(irrY,Rs),lossVol=P.losses*R;
-    const toSea=Math.max(0,R-delivered-lossVol);
-    const evap=(opts.evapRate||P.evapRate)*area*1e-3;
-    let Vn=Math.min(Math.max(V+toSea-evap,0.002*P.V0),P.V0*1.03);
-    M+=toSea*1e12*P.riverSalt;V=Vn;
-    const r=s[s.length-1];
-    r.power=P.kPower*Rw/1000;r.crop=delivered*P.cropCoef;r.toSea=toSea;r.delivered=delivered;r.demand=irrY;
+
+/* one basin step; returns updated {V,M,Mprec} + derived area,salinity */
+function basinStep(b,inflow,evapFactor,V0,A0){
+  const area=A0*Math.pow(Math.max(b.V,0)/V0,0.65);
+  const evap=P.eCoef*area*1e-3*evapFactor;
+  let V=Math.min(Math.max(b.V+inflow-evap,0.008*V0),V0*1.03);
+  let M=b.M+inflow*1e12*P.riverSalt;          // salt added by inflow (grams)
+  let Mprec=b.Mprec;
+  let C=M/(Math.max(V,0.5)*1e12);             // g/L  (km³*1e12 = litres)
+  if(C>P.Csat){                                // solubility cap -> precipitate
+    const excess=(C-P.Csat)*Math.max(V,0.5)*1e12;
+    M-=excess; Mprec+=excess; C=P.Csat;
   }
+  return {V,M,Mprec,area,salinity:C};
+}
+
+/* full run. p = {irr,winterShare,split,warm,years, history, dikeYear} */
+function simulate(p){
+  const years=p.years;
+  const s=[];
+  let N={V:P.N.V0, M:P.N.C0*P.N.V0*1e12, Mprec:0};
+  let S={V:P.S.V0, M:P.S.C0*P.S.V0*1e12, Mprec:0};
+  for(let y=0;y<=years;y++){
+    const areaN=P.N.A0*Math.pow(Math.max(N.V,0)/P.N.V0,0.65);
+    const areaS=P.S.A0*Math.pow(Math.max(S.V,0)/P.S.V0,0.65);
+    const Cn=N.M/(Math.max(N.V,0.5)*1e12), Cs=S.M/(Math.max(S.V,0.5)*1e12);
+    const Vtot=N.V+S.V, area=areaN+areaS, Mtot=N.M+S.M;
+    const salWhole=Mtot/(Math.max(Vtot,0.5)*1e12);
+    const level=P.Lmin+(P.L0-P.Lmin)*Math.sqrt(Math.max(Vtot,0)/P.V0tot);
+    // toxic-dust index: exposed dry bed of the South, weighted by precipitated salt crust
+    const exposedS=Math.max(0,1-areaS/P.S.A0);
+    const crust=Math.min((S.Mprec+N.Mprec)/6e15,1);
+    const dust=Math.max(0,Math.min(100,Math.round(100*exposedS*(0.45+0.55*crust))));
+    const saltGt=(S.Mprec+N.Mprec)/1e15;       // grams -> gigatonnes
+    const rec={y,V:Vtot,area,level,salinity:salWhole,dust,saltGt,
+      N:{V:N.V,area:areaN,salinity:Cn}, S:{V:S.V,area:areaS,salinity:Cs}};
+    s.push(rec);
+    if(y===years)break;
+
+    /* ---- this year's drivers ---- */
+    const warm=p.warm||0;                                   // 0..1
+    const evapFactor=1+warm*0.6*(y/Math.max(years,1));      // hotter over time
+    const cin=1-warm*0.12*(y/Math.max(years,1));            // rivers shrink a little
+    let irrY, splitS;
+    if(p.history){
+      const ramp=10+Math.min(y/26,1)*(91-10);              // 10 -> 91 km³/yr over 26 yr
+      irrY   = y>=45 ? ramp*0.86 : ramp;                   // post-2005 easing of total diversion
+      splitS = y>=45 ? 0.90 : 0.72;                        // after the dam, spare the Syr Darya (North recovers)
+    }else{ irrY=p.irr; splitS=p.split; }                    // splitS = share of diversion on the Amu (South)
+    const flowN=P.syr*cin, flowS=P.amu*cin, flow=flowN+flowS;
+
+    // diversion pulled from each river (can't take more than the river carries)
+    const divS=Math.min(irrY*splitS, flowS*0.96);
+    const divN=Math.min(irrY*(1-splitS), flowN*0.96);
+    // water that actually reaches each sea after diversion + losses
+    let reachN=Math.max(0, flowN - divN - P.losses*flowN);
+    let reachS=Math.max(0, flowS - divS - P.losses*flowS);
+
+    // Kok-Aral dike: before it exists, North water spills over the strait into the South and is lost;
+    // once built, that water stays in the North lobe (the real 2005 rescue).
+    const dikeOn = p.dikeYear!=null && y>=p.dikeYear;
+    if(!dikeOn){ const spill=0.5*reachN; reachN-=spill; reachS+=spill; }
+    else { el('dikeMark'); }
+
+    // hydro power: timing of release on the upstream reservoirs (does not consume the water)
+    const Rw=p.winterShare*flow;
+    const power=P.kPower*Rw/1000;
+    // summer water available to fields, and what the fields actually got
+    const summerCap=(1-p.winterShare)*flow;
+    const delivered=Math.min(irrY,summerCap);
+    const crop=delivered*P.cropCoef;
+
+    N=basinStep(N,reachN,evapFactor,P.N.V0,P.N.A0);
+    S=basinStep(S,reachS,evapFactor,P.S.V0,P.S.A0);
+
+    rec.power=power; rec.crop=crop; rec.demand=irrY; rec.delivered=delivered;
+    rec.dikeOn=dikeOn;
+  }
+  // carry the last flow-derived values onto the final record
   const last=s[s.length-1],prev=s[s.length-2]||{};
-  ['power','crop','demand','delivered','toSea'].forEach(k=>last[k]=prev[k]);
+  ['power','crop','demand','delivered','dikeOn'].forEach(k=>last[k]=prev[k]);
   return s;
 }
+
 /* ===== basin-steward score (0-100) ===== */
-function scoreOf(f){                 // f = final state
-  const sea = f.salinity<=24 ? 100 : f.salinity>=90 ? 0 : Math.round(100*(90-f.salinity)/(90-24));
+function scoreOf(f){
+  // living sea: whole-sea salinity, floored if the North was saved, capped if the South died
+  let sea = f.salinity<=24 ? 100 : f.salinity>=90 ? 0 : Math.round(100*(90-f.salinity)/(90-24));
+  const northAlive = f.N && f.N.salinity<24 && f.N.V>0.3*P.N.V0;
+  const southDead  = f.S && f.S.salinity>60;
+  if(northAlive) sea=Math.max(sea,50);
+  if(southDead)  sea=Math.min(sea,55);   // half the system is a salt desert — cap the credit
   const pow = Math.max(0,Math.min(100,Math.round(100*(f.power||0)/26)));
   const crop = Math.max(0,Math.min(100,Math.round(100*(f.crop||0)/9)));
-  const total = Math.round(0.45*sea + 0.25*pow + 0.30*crop);
+  let total = Math.round(0.45*sea + 0.25*pow + 0.30*crop);
+  total = Math.max(0,Math.min(100,total - Math.round((f.dust||0)*0.12)));  // toxic-dust penalty
+  const bothHealthy = f.S&&f.N && f.S.salinity<40 && f.N.salinity<40 && (f.dust||0)<25;
   let title,desc;
-  if(sea>70&&pow>45&&crop>45){title='Master steward';desc='You held all three at once — a living sea, real power, and fed fields. Almost nobody does this.';}
-  else if(sea<=10){title='The road that emptied the Aral';desc='This is essentially what really happened: everything to cotton, the sea abandoned.';}
-  else if(sea>70&&(crop<35||pow<25)){title='Sea saved, something sacrificed';desc='The sea lives — but food or power paid the bill. Real policy is this tradeoff.';}
-  else if(crop>60&&sea<40){title='A working country, a dying sea';desc='The classic Central Asian bind: full fields, a shrinking sea behind them.';}
-  else {title='A mixed hand';desc='A middle path — no catastrophe, no triumph. Try to push one lever without breaking another.';}
+  if(bothHealthy&&pow>40&&crop>40){title='Master steward';desc='You held it all — both seas alive, real power, fed fields, and almost no dust. Almost nobody does this.';}
+  else if(southDead&&northAlive){title='You saved the North Aral';desc='The real 2005 outcome: the dike kept the small sea alive while the South collapsed to brine and dust.';}
+  else if(f.salinity>80||(southDead&&!northAlive)){title='The road that emptied the Aral';desc='Essentially what really happened: everything to cotton, the sea abandoned, salt storms rising off the bed.';}
+  else if(bothHealthy&&(crop<35||pow<25)){title='Sea saved, something sacrificed';desc='The seas live — but food or power paid the bill. Real policy is this tradeoff.';}
+  else if(crop>60&&sea<45){title='A working country, a dying sea';desc='The classic Central Asian bind: full fields, a shrinking sea behind them.';}
+  else {title='A mixed hand';desc='A middle path — no catastrophe, no triumph. Push one lever without breaking another.';}
   return {sea,pow,crop,total,title,desc};
 }
+
 /* ===== measured real data (published Aral figures; y = year-1960) ===== */
 const MEAS={
   V:  [{y:0,v:1100},{y:38,v:220}],
@@ -440,8 +605,6 @@ const MEAS={
   sal:[{y:0,v:10},{y:30,v:30}],
 };
 const MILES=[{y:27,t:'1987 · sea splits N / S'},{y:45,t:'2005 · Kok-Aral dam saves the North'},{y:54,t:'2014 · eastern basin dries out'}];
-/* real-history irrigation ramp tuned to track measured area (10→95 km³ over 24 yr) */
-function histRamp(y,years){const t=Math.min(y/24,1);return 10+t*(95-10);}
 
 /* ===== helpers ===== */
 const el=id=>document.getElementById(id);
@@ -458,53 +621,57 @@ function fmt(n,d=1){return n.toLocaleString('en-US',{minimumFractionDigits:d,max
 function toast(m){const t=el('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1500);}
 
 /* ===== controls ===== */
-const irr=el('irr'),win=el('win'),yrs=el('yrs');
+const irr=el('irr'),win=el('win'),split=el('split'),warm=el('warm'),yrs=el('yrs');
+let dikeOn=false, realMode=false;
 const PRESETS=[
-  {t:'Balanced stewardship',d:'Share the water. The sea lives.',irr:45,win:50},
-  {t:'Power first',d:'Winter electricity, sea saved, food cut.',irr:30,win:85},
-  {t:'Food first',d:'Maximum cotton. The sea pays.',irr:100,win:45},
-  {t:'Historical collapse',d:'All water to cotton — what really happened.',irr:100,win:20},
+  {t:'Balanced stewardship',d:'Share the water. Both seas live.',irr:45,win:50,split:60,warm:20,dike:false},
+  {t:'Power first',d:'Winter electricity, food cut.',irr:30,win:85,split:60,warm:20,dike:false},
+  {t:'Food first',d:'Maximum cotton. The South pays.',irr:105,win:45,split:80,warm:25,dike:false},
+  {t:'Save the North (Kok-Aral)',d:'Dam the strait, spare the Syr Darya.',irr:80,win:45,split:88,warm:25,dike:true},
 ];
 const pbox=el('presets');
 PRESETS.forEach((p,i)=>{const b=document.createElement('button');b.className='preset';b.dataset.i=i;
   b.innerHTML=`<div class="pt">${p.t}</div><div class="pd">${p.d}</div>`;
-  b.onclick=()=>{irr.value=p.irr;win.value=p.win;realMode=false;setOn(i);syncLabels();};pbox.appendChild(b);});
-// real-history replay (spans the full 1960→2010 window, ramps irrigation like history)
+  b.onclick=()=>{irr.value=p.irr;win.value=p.win;split.value=p.split;warm.value=p.warm;
+    setDike(p.dike);realMode=false;setOn(i);syncLabels();};pbox.appendChild(b);});
 const realBtn=document.createElement('button');realBtn.className='preset real';realBtn.dataset.i='real';
 realBtn.innerHTML=`<div class="pt">Replay real history 1960→2010<span class="badge">real data</span></div>
-  <div class="pd">Run the actual policy path and watch the model track the measured gold points.</div>`;
-realBtn.onclick=()=>{realMode=true;yrs.value=50;setOn('real');syncLabels();run();};pbox.appendChild(realBtn);
+  <div class="pd">The actual policy path — watch the South collapse, the 2005 dike save the North, and the model track the measured gold points.</div>`;
+realBtn.onclick=()=>{realMode=true;yrs.value=50;setDike(false);setOn('real');syncLabels();run();};pbox.appendChild(realBtn);
 
 function setOn(i){document.querySelectorAll('.preset').forEach(b=>b.classList.toggle('on',b.dataset.i==i));}
 function clearOn(){document.querySelectorAll('.preset').forEach(b=>b.classList.remove('on'));}
+function setDike(on){dikeOn=on;el('dikeBtn').classList.toggle('on',on);el('dikeBtn').setAttribute('aria-pressed',on);}
 function fill(inp){inp.style.setProperty('--f',(inp.value-inp.min)/(inp.max-inp.min)*100+'%');}
-function syncLabels(){el('virr').textContent=irr.value;el('vwin').textContent=win.value;el('vyrs').textContent=yrs.value;fill(irr);fill(win);fill(yrs);}
-[irr,win].forEach(s=>s.addEventListener('input',()=>{clearOn();realMode=false;syncLabels();}));
+function syncLabels(){el('virr').textContent=irr.value;el('vwin').textContent=win.value;
+  el('vsplit').textContent=split.value;el('vwarm').textContent=warm.value;el('vyrs').textContent=yrs.value;
+  fill(irr);fill(win);fill(split);fill(warm);fill(yrs);}
+[irr,win,split,warm].forEach(s=>s.addEventListener('input',()=>{clearOn();realMode=false;syncLabels();}));
 yrs.addEventListener('input',()=>{realMode=false;syncLabels();});
-let realMode=false;
+el('dikeBtn').onclick=()=>{setDike(!dikeOn);clearOn();realMode=false;};
 syncLabels();
 
 /* ===== render sea ===== */
-function paintSea(st,years){
-  const frac=Math.max(st.V/P.V0,0);
-  const kS=Math.max(Math.sqrt(frac),0.12);
-  // North Aral: tracks the sea, but in real-history replay it recovers after the 2005 Kok-Aral dam
-  let nFrac=frac;
-  if(realMode && st.y>=45){ const t=Math.min((st.y-45)/5,1); nFrac=frac + t*(0.62-frac); }
-  const kN=Math.max(Math.sqrt(Math.max(nFrac,0)),0.12);
-  const ax=100,ay=225;   // south retreats toward the deep western basin
+function paintSea(st){
+  const kS=Math.max(Math.sqrt(Math.max(st.S.V/P.S.V0,0)),0.12);
+  const kN=Math.max(Math.sqrt(Math.max(st.N.V/P.N.V0,0)),0.12);
+  const ax=106,ay=224;   // south retreats toward the deep western basin
   el('waterSG').setAttribute('transform',`translate(${ax} ${ay}) scale(${kS.toFixed(3)}) translate(${-ax} ${-ay})`);
-  const nx=150,ny=74;
+  const nx=150,ny=76;
   el('waterNG').setAttribute('transform',`translate(${nx} ${ny}) scale(${kN.toFixed(3)}) translate(${-nx} ${-ny})`);
-  el('waterS').setAttribute('fill',saltColor(st.salinity));
-  el('waterN').setAttribute('fill',saltColor(realMode&&st.y>=47?Math.min(st.salinity,20):st.salinity));
+  el('waterS').setAttribute('fill',saltColor(st.S.salinity));
+  el('waterN').setAttribute('fill',saltColor(st.N.salinity));
+  el('dikeMark').setAttribute('opacity', st.dikeOn?1:0);
+  // salt crust on the exposed South bed: driven by how much bed is bare (1 - water fraction)
+  const bareS=Math.max(0,1-Math.sqrt(Math.max(st.S.V/P.S.V0,0)));
+  el('crustS').setAttribute('opacity',(bareS*0.9).toFixed(2));
+  el('dusthaze').style.opacity=(st.dust/100*0.9).toFixed(2);
   el('yrNow').textContent=1960+st.y;
-  const pct=(st.V/P.V0*100);
-  const cap = st.salinity>60?`The sea has all but vanished — <b>${st.salinity.toFixed(0)} g/L</b>, a salt desert where a fishery once was.`
-    : st.salinity>24?`Retreating — <b>${pct.toFixed(0)}%</b> of its 1960 water left, salinity <b>${st.salinity.toFixed(0)} g/L</b> past the fishery limit.`
-    : `Holding — <b>${pct.toFixed(0)}%</b> of its 1960 water, salinity <b>${st.salinity.toFixed(0)} g/L</b>, still alive.`;
+  const pct=(st.V/P.V0tot*100);
+  const cap = st.salinity>60?`The seas have all but vanished — whole-sea <b>${st.salinity.toFixed(0)} g/L</b>, salt storms off the bare bed.`
+    : st.salinity>24?`Retreating — <b>${pct.toFixed(0)}%</b> of the 1960 water left, whole-sea salinity <b>${st.salinity.toFixed(0)} g/L</b>, past the fishery limit.`
+    : `Holding — <b>${pct.toFixed(0)}%</b> of the 1960 water, salinity <b>${st.salinity.toFixed(0)} g/L</b>, still alive.`;
   el('caption').innerHTML=cap;
-  // milestone flags (real mode only)
   const mf=el('mileflag');
   [...mf.children].forEach((c,i)=>c.classList.toggle('on', realMode && st.y>=MILES[i].y));
 }
@@ -512,24 +679,29 @@ function gauge(v,min,max){return Math.max(0,Math.min(100,(v-min)/(max-min)*100))
 function setKPI(st){
   el('gPower').innerHTML=fmt(st.power||0,1)+' <small>TWh</small>';
   el('gCrop').innerHTML=fmt(st.crop||0,1)+' <small>Mt</small>';
-  el('gLevel').innerHTML=fmt(st.level,0)+' <small>m</small>';
   el('gSalt').innerHTML=fmt(st.salinity,0)+' <small>g/L</small>';
+  el('gDust').innerHTML=fmt(st.dust||0,0)+' <small>/100</small>';
   el('fPower').style.width=gauge(st.power||0,0,35)+'%';
   el('fCrop').style.width=gauge(st.crop||0,0,12)+'%';
-  el('fLevel').style.width=gauge(st.level,25,53)+'%';
   el('fSalt').style.width=gauge(st.salinity,10,120)+'%';
+  el('fDust').style.width=(st.dust||0)+'%';
   const sc=st.salinity<24?'var(--crop)':(st.salinity<50?'var(--power)':'var(--rust)');
   el('gSalt').style.color=sc;el('fSalt').style.background=sc;el('dSalt').style.background=sc;
   el('sSalt').textContent=st.salinity<24?'fishery can live':(st.salinity<50?'fishery stressed':'fishery dead');
   el('sPower').textContent=(st.power>18)?'strong winter supply':'modest supply';
   el('sCrop').textContent=(st.demand&&st.delivered<st.demand-1)?'fields water-stressed':'fields watered';
-  el('sLevel').textContent=(st.V/P.V0>0.6)?'sea holding':(st.V/P.V0>0.25?'sea shrinking':'sea near gone');
+  el('sDust').textContent=(st.dust>60)?'severe salt-dust storms':(st.dust>25?'dust rising off the bed':'little exposed salt');
+  // basin split cards
+  el('bnPct').textContent=Math.round(st.N.V/P.N.V0*100);
+  el('bsPct').textContent=Math.round(st.S.V/P.S.V0*100);
+  el('bnMeta').innerHTML=`salinity <b>${st.N.salinity.toFixed(0)} g/L</b> · ${st.N.salinity<24?'alive':st.N.salinity<50?'stressed':'brine'}`;
+  el('bsMeta').innerHTML=`salinity <b>${st.S.salinity.toFixed(0)} g/L</b> · ${st.S.salinity<24?'alive':st.S.salinity<50?'stressed':'brine'}`;
 }
-/* ===== charts (with measured overlay) ===== */
+/* ===== charts (with measured overlay + optional 2nd series) ===== */
 function drawLine(canvas,data,key,color,opts={}){
   const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
   const pad={l:40,r:12,t:12,b:20};
-  const xs=data.map(d=>d.y),ys=data.map(d=>d[key]);
+  const xs=data.map(d=>d.y),ys=data.map(d=>getv(d,key));
   const scaleY=opts.scaleY||1;
   const xmax=Math.max(...xs,1);let ymax=(opts.ymax||Math.max(...ys,1))*1.08,ymin=0;
   const X=v=>pad.l+(v/xmax)*(W-pad.l-pad.r),Y=v=>H-pad.b-((v-ymin)/(ymax-ymin))*(H-pad.t-pad.b);
@@ -538,32 +710,41 @@ function drawLine(canvas,data,key,color,opts={}){
   if(opts.threshold!=null&&opts.threshold<ymax){const y=Y(opts.threshold);ctx.setLineDash([4,4]);ctx.strokeStyle='rgba(180,83,31,.7)';
     ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='rgba(180,83,31,.95)';ctx.fillText(opts.thLabel||'',pad.l+4,y-4);}
   const n=opts.upto!=null?opts.upto:data.length-1;
+  // optional secondary (dashed) series drawn under the main one
+  if(opts.key2){ const ys2=data.map(d=>getv(d,opts.key2));
+    ctx.beginPath();ctx.moveTo(X(xs[0]),Y(ys2[0]));for(let i=1;i<=n;i++)ctx.lineTo(X(xs[i]),Y(ys2[i]));
+    ctx.setLineDash([5,4]);ctx.strokeStyle=opts.color2||'#5eead4';ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]); }
   ctx.beginPath();ctx.moveTo(X(xs[0]),Y(ys[0]));for(let i=1;i<=n;i++)ctx.lineTo(X(xs[i]),Y(ys[i]));
   ctx.lineTo(X(xs[n]),H-pad.b);ctx.lineTo(X(xs[0]),H-pad.b);ctx.closePath();
   const g=ctx.createLinearGradient(0,pad.t,0,H-pad.b);g.addColorStop(0,color+'50');g.addColorStop(1,color+'05');ctx.fillStyle=g;ctx.fill();
   ctx.beginPath();ctx.moveTo(X(xs[0]),Y(ys[0]));for(let i=1;i<=n;i++)ctx.lineTo(X(xs[i]),Y(ys[i]));
   ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.lineJoin='round';ctx.stroke();
   ctx.fillStyle=color;ctx.beginPath();ctx.arc(X(xs[n]),Y(ys[n]),3.4,0,7);ctx.fill();
-  // measured gold markers
   if(opts.meas){ opts.meas.forEach(m=>{ if(m.y>xmax)return; const cx=X(m.y),cy=Y(m.v*scaleY);
     ctx.fillStyle='#ffcf5a';ctx.strokeStyle='#7a5b12';ctx.lineWidth=1.4;
     ctx.beginPath();ctx.arc(cx,cy,4.2,0,7);ctx.fill();ctx.stroke(); }); }
 }
+function getv(d,key){ // supports dotted keys like "S.salinity"
+  return key.indexOf('.')<0 ? d[key] : key.split('.').reduce((o,k)=>o&&o[k],d);
+}
 function drawAll(upto){
-  drawLine(el('cVol'),series,'V','#39b9ef',{ymax:P.V0,upto,meas:MEAS.V});
-  drawLine(el('cArea'),series,'area','#5eead4',{ymax:P.A0,scaleY:1/1000,upto,meas:MEAS.area.map(m=>({y:m.y,v:m.v/1000}))});
-  drawLine(el('cSal'),series,'salinity','#e0842f',{ymax:Math.max(80,...series.map(s=>s.salinity))*1.05,upto,threshold:24,thLabel:'fishery limit',meas:MEAS.sal});
+  drawLine(el('cVol'),series,'V','#39b9ef',{ymax:P.V0tot,upto,meas:MEAS.V});
+  drawLine(el('cArea'),series,'area','#5eead4',{ymax:P.A0tot,scaleY:1/1000,upto,meas:MEAS.area.map(m=>({y:m.y,v:m.v/1000}))});
+  drawLine(el('cSal'),series,'S.salinity','#e0842f',{ymax:Math.max(80,...series.map(s=>s.S.salinity))*1.05,upto,
+    threshold:24,thLabel:'fishery limit',meas:MEAS.sal,key2:'N.salinity',color2:'#5eead4'});
 }
 /* ===== verdict ===== */
 function verdict(series){
-  const f=series[series.length-1],vf=f.V/P.V0,L=[];const push=(c,t)=>L.push({c,t});
-  if(f.salinity>60)push('var(--bad)',`The Aral collapsed — ${f.salinity.toFixed(0)} g/L, saltier than the ocean. The fishery is dead.`);
-  else if(f.salinity>24)push('var(--rust)',`The sea survives but is stressed — ${f.salinity.toFixed(0)} g/L is past what a freshwater fishery can take.`);
-  else push('var(--crop)',`The sea stayed healthy — ${f.salinity.toFixed(0)} g/L, fresh enough for fish to live.`);
-  push('var(--sea)',`Water left in the sea: ${(vf*100).toFixed(0)}% of its 1960 volume (level ${f.level.toFixed(0)} m).`);
+  const f=series[series.length-1],vf=f.V/P.V0tot,L=[];const push=(c,t)=>L.push({c,t});
+  const northAlive=f.N.salinity<24&&f.N.V>0.3*P.N.V0;
+  if(f.salinity>60)push('var(--bad)',`Whole-sea collapse — ${f.salinity.toFixed(0)} g/L. South Aral ${f.S.salinity.toFixed(0)} g/L${northAlive?', but the North Aral held.':', both basins lost.'}`);
+  else if(f.salinity>24)push('var(--rust)',`Stressed — whole-sea ${f.salinity.toFixed(0)} g/L, past what a freshwater fishery survives.`);
+  else push('var(--crop)',`Healthy — whole-sea ${f.salinity.toFixed(0)} g/L, fresh enough for fish to live.`);
+  push('var(--sea)',`Water left: ${(vf*100).toFixed(0)}% of 1960 (level ${f.level.toFixed(0)} m). North ${Math.round(f.N.V/P.N.V0*100)}%, South ${Math.round(f.S.V/P.S.V0*100)}%.`);
   push('var(--power)',`Winter electricity: ${f.power.toFixed(1)} TWh/yr ${f.power>18?'— a strong winter supply.':f.power>8?'— a modest supply.':'— very little; water was held for summer.'}`);
   const stressed=f.demand&&f.delivered<f.demand-1;
   push('var(--crop)',`Crops: ${f.crop.toFixed(1)} Mt/yr${stressed?` — fields wanted ${f.demand.toFixed(0)} km³ but got ${f.delivered.toFixed(0)}; summer water ran short.`:' — fields were fully watered.'}`);
+  push('var(--dust)',`Toxic dust risk ${f.dust}/100 — ${f.saltGt.toFixed(1)} Gt of salt precipitated onto the exposed bed.`);
   return L;
 }
 function paintScore(f){
@@ -576,17 +757,21 @@ function paintScore(f){
 }
 /* ===== run ===== */
 let timer=null,series=null,lastScore=null;
+function policy(){
+  return realMode
+    ? {history:true, winterShare:0.2, warm:0.22, years:+yrs.value, dikeYear:45, irr:0, split:0.72}
+    : {irr:+irr.value, winterShare:+win.value/100, split:+split.value/100, warm:+warm.value/100,
+       years:+yrs.value, dikeYear: dikeOn?0:null};
+}
 function run(){
   clearTimeout(timer);stopPlay();
-  const years=+yrs.value;
-  series = realMode ? simulate(0,0.2,years,{irrRamp:histRamp,evapRate:1.05})
-                    : simulate(+irr.value,+win.value/100,years);
+  series=simulate(policy());
   el('vGrid').innerHTML='';el('vHead').textContent='Running…';
   el('scrub').classList.remove('on');
   let i=0;
   const step=()=>{
     const st=series[i];
-    paintSea(st,years);setKPI(st);drawAll(i);
+    paintSea(st);setKPI(st);drawAll(i);
     if(i<series.length-1){i++;timer=setTimeout(step,realMode?42:30);}else finish();
   };step();
 }
@@ -594,19 +779,18 @@ function finish(){
   const lines=verdict(series);
   const f=series[series.length-1];
   el('vHead').textContent = realMode
-    ? 'The real path: the model tracks the measured collapse (gold points), and the North Aral recovers after the 2005 dam.'
+    ? 'The real path: the South Aral collapses to brine, the 2005 Kok-Aral dike saves the North, and the model tracks the measured gold points.'
     : scoreOf(f).title;
   const g=el('vGrid');g.innerHTML='';
   lines.forEach(L=>{const d=document.createElement('div');d.className='vline';
     d.innerHTML=`<span class="ic" style="background:${L.c}"></span><span>${L.t}</span>`;g.appendChild(d);});
   paintScore(f);
-  // enable scrubber
   const sr=el('scrub-range');sr.max=series.length-1;sr.value=series.length-1;
   el('scrYr').textContent=1960+f.y;el('scrub').classList.add('on');
 }
 /* ===== scrubber + playback ===== */
 let playTimer=null;
-function scrubTo(i){const st=series[i];paintSea(st,+yrs.value);setKPI(st);drawAll(i);el('scrYr').textContent=1960+st.y;el('scrub-range').value=i;}
+function scrubTo(i){const st=series[i];paintSea(st);setKPI(st);drawAll(i);el('scrYr').textContent=1960+st.y;el('scrub-range').value=i;}
 el('scrub-range').addEventListener('input',e=>{ if(series) scrubTo(+e.target.value); });
 function stopPlay(){clearInterval(playTimer);playTimer=null;el('playBtn').textContent='▶ Play';}
 el('playBtn').onclick=()=>{
@@ -616,13 +800,17 @@ el('playBtn').onclick=()=>{
   playTimer=setInterval(()=>{ if(i>=series.length-1){stopPlay();return;} i++;scrubTo(i); },70);
 };
 /* ===== buttons ===== */
-el('runBtn').onclick=()=>{ if(!document.querySelector('.preset.on')) realMode=false; run(); };
-el('saveBtn').onclick=()=>{try{localStorage.setItem('upstream_policy',JSON.stringify({irr:irr.value,win:win.value,yrs:yrs.value}));
+el('runBtn').onclick=()=>{ run(); };
+el('saveBtn').onclick=()=>{try{localStorage.setItem('upstream_policy',
+  JSON.stringify({irr:irr.value,win:win.value,split:split.value,warm:warm.value,yrs:yrs.value,dike:dikeOn}));
   toast('Policy saved');}catch(e){}};
 el('csvBtn').onclick=()=>{
   if(!series){toast('Run a policy first');return;}
-  const rows=[['year','volume_km3','area_km2','level_m','salinity_g_per_L','winter_power_TWh','crop_Mt']];
-  series.forEach(s=>rows.push([1960+s.y,s.V.toFixed(1),Math.round(s.area),s.level.toFixed(1),s.salinity.toFixed(1),(s.power||0).toFixed(2),(s.crop||0).toFixed(2)]));
+  const rows=[['year','whole_vol_km3','whole_area_km2','level_m','whole_sal_g_per_L',
+    'north_vol_km3','north_sal','south_vol_km3','south_sal','dust_index','salt_precip_Gt','winter_power_TWh','crop_Mt']];
+  series.forEach(s=>rows.push([1960+s.y,s.V.toFixed(1),Math.round(s.area),s.level.toFixed(1),s.salinity.toFixed(1),
+    s.N.V.toFixed(1),s.N.salinity.toFixed(1),s.S.V.toFixed(1),s.S.salinity.toFixed(1),
+    s.dust,s.saltGt.toFixed(2),(s.power||0).toFixed(2),(s.crop||0).toFixed(2)]));
   const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='upstream-run.csv';
   document.body.appendChild(a);a.click();a.remove();toast('CSV downloaded');
@@ -635,14 +823,15 @@ el('shareBtn').onclick=async()=>{
   x.fillStyle='#0f1823';x.strokeStyle='#24313f';x.lineWidth=3;
   x.beginPath();x.roundRect(60,60,W-120,H-120,44);x.fill();x.stroke();
   x.textAlign='center';
-  x.fillStyle='#5eead4';x.font='700 40px '+F;x.fillText('UPSTREAM · THE ARAL SEA MACHINE',W/2,180);
-  x.fillStyle='#eef4f8';x.font='800 190px '+F;x.fillText(lastScore.total,W/2,470);
-  x.fillStyle='#9fb2c4';x.font='500 40px '+F;x.fillText('Basin steward score',W/2,540);
-  x.fillStyle='#ffffff';x.font='800 54px '+F;x.fillText(lastScore.title,W/2,650);
+  x.fillStyle='#5eead4';x.font='700 40px '+F;x.fillText('UPSTREAM · THE ARAL SEA MACHINE',W/2,170);
+  x.fillStyle='#eef4f8';x.font='800 180px '+F;x.fillText(lastScore.total,W/2,440);
+  x.fillStyle='#9fb2c4';x.font='500 40px '+F;x.fillText('Basin steward score',W/2,508);
+  x.fillStyle='#ffffff';x.font='800 50px '+F;x.fillText(lastScore.title,W/2,610);
   const cells=[['Living sea',lastScore.sea,'#3aa9e0'],['Power',lastScore.pow,'#f6b93b'],['Food',lastScore.crop,'#54cf7c']];
-  cells.forEach((cl,i)=>{const cx=W/2+(i-1)*300;x.fillStyle=cl[2];x.font='800 92px '+F;x.fillText(cl[1],cx,830);
-    x.fillStyle='#9fb2c4';x.font='500 34px '+F;x.fillText(cl[0],cx,884);});
-  x.fillStyle='#6c7f90';x.font='400 30px '+F;x.fillText(`sea ${f.salinity.toFixed(0)} g/L · power ${f.power.toFixed(1)} TWh · crop ${f.crop.toFixed(1)} Mt`,W/2,980);
+  cells.forEach((cl,i)=>{const cx=W/2+(i-1)*300;x.fillStyle=cl[2];x.font='800 88px '+F;x.fillText(cl[1],cx,780);
+    x.fillStyle='#9fb2c4';x.font='500 34px '+F;x.fillText(cl[0],cx,832);});
+  x.fillStyle='#c98b4b';x.font='600 34px '+F;x.fillText(`toxic dust ${f.dust}/100 · ${f.saltGt.toFixed(1)} Gt salt precipitated`,W/2,910);
+  x.fillStyle='#6c7f90';x.font='400 30px '+F;x.fillText(`North ${f.N.salinity.toFixed(0)} g/L · South ${f.S.salinity.toFixed(0)} g/L · power ${f.power.toFixed(1)} TWh`,W/2,965);
   c.toBlob(async b=>{
     const file=new File([b],'upstream-score.png',{type:'image/png'});
     try{ if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Upstream'});return;} }catch(e){}
@@ -653,11 +842,14 @@ el('shareBtn').onclick=async()=>{
 el('mileflag').innerHTML=MILES.map(m=>`<div class="m">${m.t}</div>`).join('');
 /* restore */
 (function(){try{const s=JSON.parse(localStorage.getItem('upstream_policy')||'null');
-  if(s){irr.value=s.irr;win.value=s.win;yrs.value=s.yrs;clearOn();syncLabels();}}catch(e){}})();
+  if(s){irr.value=s.irr;win.value=s.win;if(s.split!=null)split.value=s.split;if(s.warm!=null)warm.value=s.warm;
+    yrs.value=s.yrs;setDike(!!s.dike);clearOn();syncLabels();}}catch(e){}})();
 /* initial */
 window.addEventListener('load',()=>{
-  paintSea({V:P.V0,salinity:P.C0,level:P.L0,y:0},50);
-  setKPI({power:0,crop:0,level:P.L0,salinity:P.C0,V:P.V0,demand:70,delivered:70});
+  const st0={y:0,V:P.V0tot,area:P.A0tot,level:P.L0,salinity:P.N.C0,dust:0,saltGt:0,
+    N:{V:P.N.V0,area:P.N.A0,salinity:P.N.C0}, S:{V:P.S.V0,area:P.S.A0,salinity:P.S.C0},
+    power:0,crop:0,demand:70,delivered:70,dikeOn:false};
+  paintSea(st0);setKPI(st0);
 });
 </script>
 </body>
