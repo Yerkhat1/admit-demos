@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SkinSense — a simple skincare routine helper</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">◍</span>
+      <span class="brand-name">SkinSense</span>
+    </div>
+    <p class="tagline">Upload a photo, answer a few questions, get a routine you can actually follow.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- Step 1: photo -->
+  <section class="card" id="step-photo">
+    <h2><span class="num">1</span> Add a photo of your skin</h2>
+    <p class="muted">Good light, no makeup, face the camera. Your photo never leaves your phone. Nothing is uploaded to a server.</p>
+    <label class="uploader" id="drop">
+      <input type="file" id="file" accept="image/*" hidden />
+      <div class="uploader-inner" id="uploaderInner">
+        <span class="up-icon" aria-hidden="true">＋</span>
+        <span>Tap to add a photo</span>
+      </div>
+      <img id="preview" alt="your photo preview" hidden />
+    </label>
+    <div id="photoRead" class="photo-read" hidden></div>
+    <p class="disclaimer">This is a beginner skincare helper, not medical advice. For a rash, painful acne, or anything changing fast, see a doctor or dermatologist.</p>
+  </section>
+
+  <!-- Step 2: quiz -->
+  <section class="card" id="step-quiz">
+    <h2><span class="num">2</span> Tell me about your skin</h2>
+
+    <div class="q">
+      <p class="q-label">By afternoon, your skin usually feels…</p>
+      <div class="opts" data-q="type">
+        <button class="opt" data-v="dry">Tight or flaky (dry)</button>
+        <button class="opt" data-v="oily">Shiny all over (oily)</button>
+        <button class="opt" data-v="combo">Shiny T‑zone, normal cheeks (combination)</button>
+        <button class="opt" data-v="normal">Comfortable, balanced (normal)</button>
+      </div>
+    </div>
+
+    <div class="q">
+      <p class="q-label">What bothers you most? Pick up to two.</p>
+      <div class="opts multi" data-q="concerns" data-max="2">
+        <button class="opt" data-v="acne">Breakouts / acne</button>
+        <button class="opt" data-v="pigmentation">Dark spots / uneven tone</button>
+        <button class="opt" data-v="dullness">Dullness</button>
+        <button class="opt" data-v="dryness">Dryness / flaking</button>
+        <button class="opt" data-v="oiliness">Oiliness / large pores</button>
+        <button class="opt" data-v="aging">Fine lines</button>
+      </div>
+    </div>
+
+    <div class="q">
+      <p class="q-label">Does your skin sting or go red easily?</p>
+      <div class="opts" data-q="sensitivity">
+        <button class="opt" data-v="yes">Yes, it's sensitive</button>
+        <button class="opt" data-v="no">Not really</button>
+      </div>
+    </div>
+
+    <div class="q">
+      <p class="q-label">How much do you want to spend?</p>
+      <div class="opts" data-q="budget">
+        <button class="opt" data-v="low">Just the basics</button>
+        <button class="opt" data-v="mid">A few good products</button>
+      </div>
+    </div>
+
+    <button id="build" class="cta" disabled>Build my routine</button>
+    <p class="hint" id="hint">Answer the questions above to unlock your routine.</p>
+  </section>
+
+  <!-- Step 3: result -->
+  <section class="card result" id="step-result" hidden>
+    <h2><span class="num">3</span> Your routine</h2>
+    <p class="summary" id="summary"></p>
+
+    <div class="routine">
+      <div class="routine-col">
+        <h3>☀ Morning</h3>
+        <ol id="am"></ol>
+      </div>
+      <div class="routine-col">
+        <h3>☾ Evening</h3>
+        <ol id="pm"></ol>
+      </div>
+    </div>
+
+    <div class="tips">
+      <h3>Why these steps</h3>
+      <ul id="why"></ul>
+    </div>
+
+    <div class="rules">
+      <h3>Three rules that matter more than any product</h3>
+      <ol>
+        <li>Sunscreen every morning. It does more for dark spots and aging than anything else here.</li>
+        <li>Add one new product at a time, and give it two weeks before you judge it.</li>
+        <li>Consistency beats intensity. A simple routine you actually do wins.</li>
+      </ol>
+    </div>
+
+    <div class="actions">
+      <button id="restart" class="ghost">Start over</button>
+      <button id="share" class="ghost">Copy my routine</button>
+    </div>
+    <p class="disclaimer">General guidance only, not a medical diagnosis.</p>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>SkinSense — built by Amina for friends who can't afford a dermatologist. Free, private, no account.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

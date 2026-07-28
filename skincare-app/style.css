@@ -1,0 +1,118 @@
+:root{
+  --bg:#faf6f3;
+  --card:#ffffff;
+  --ink:#2c2422;
+  --muted:#8a7d78;
+  --line:#ece3dd;
+  --brand:#c8807a;
+  --brand-deep:#a85f5a;
+  --accent:#f3e8e4;
+  --ok:#3f7d63;
+  --radius:18px;
+  --shadow:0 8px 30px rgba(120,80,70,.08);
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{width:100%;max-width:820px;margin:0 auto;padding:0 20px}
+
+/* header */
+.site-header{
+  background:linear-gradient(135deg,#f7ded8,#efe6f0);
+  padding:38px 0 30px;
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{font-size:28px;color:var(--brand-deep)}
+.brand-name{font-size:24px;font-weight:700;letter-spacing:.3px}
+.tagline{margin:.5rem 0 0;color:var(--muted);font-size:15px;max-width:34rem}
+
+/* cards */
+main{padding:26px 0 10px}
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:22px;
+  margin:0 0 20px;
+}
+.card h2{margin:.1rem 0 .5rem;font-size:19px;display:flex;align-items:center;gap:10px}
+.num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:50%;
+  background:var(--brand);color:#fff;font-size:14px;font-weight:700;flex:none;
+}
+.muted{color:var(--muted);font-size:14px;margin:.2rem 0 1rem}
+.disclaimer{color:var(--muted);font-size:12.5px;margin:1rem 0 0;border-top:1px dashed var(--line);padding-top:.8rem}
+
+/* uploader */
+.uploader{display:block;cursor:pointer;position:relative}
+.uploader-inner{
+  border:2px dashed #e0cfc8;border-radius:14px;
+  padding:34px 16px;text-align:center;color:var(--muted);
+  transition:.15s;background:#fdfaf9;
+}
+.uploader:hover .uploader-inner{border-color:var(--brand);color:var(--brand-deep);background:#fff}
+.up-icon{display:block;font-size:30px;color:var(--brand);margin-bottom:6px}
+#preview{width:100%;max-height:340px;object-fit:cover;border-radius:14px;display:block}
+.photo-read{
+  margin-top:14px;background:var(--accent);border-radius:12px;padding:12px 14px;font-size:14px;
+}
+.photo-read strong{color:var(--brand-deep)}
+
+/* quiz */
+.q{margin:0 0 18px}
+.q-label{font-weight:600;margin:0 0 .5rem;font-size:15px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{
+  border:1.5px solid var(--line);background:#fff;color:var(--ink);
+  padding:9px 14px;border-radius:999px;font-size:14px;cursor:pointer;transition:.12s;
+}
+.opt:hover{border-color:var(--brand)}
+.opt.sel{background:var(--brand);border-color:var(--brand);color:#fff}
+
+/* buttons */
+.cta{
+  width:100%;margin-top:6px;padding:14px;border:0;border-radius:12px;
+  background:var(--brand-deep);color:#fff;font-size:16px;font-weight:600;cursor:pointer;transition:.15s;
+}
+.cta:disabled{background:#e3d5d0;color:#a9998f;cursor:not-allowed}
+.cta:not(:disabled):hover{background:#8f4e49}
+.hint{color:var(--muted);font-size:13px;text-align:center;margin:.6rem 0 0}
+
+/* result */
+.summary{background:var(--accent);border-radius:12px;padding:14px;font-size:15px;margin:0 0 18px}
+.routine{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.routine-col{background:#fdfaf9;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.routine-col h3{margin:.1rem 0 .6rem;font-size:16px}
+.routine-col ol{margin:0;padding-left:1.1rem}
+.routine-col li{margin:.4rem 0;font-size:14px}
+.routine-col li b{color:var(--brand-deep)}
+.tips,.rules{margin-top:20px}
+.tips h3,.rules h3{font-size:16px;margin:0 0 .5rem}
+.tips ul{margin:0;padding-left:1.1rem}
+.tips li{font-size:14px;margin:.35rem 0}
+.rules ol{margin:0;padding-left:1.1rem}
+.rules li{font-size:14px;margin:.35rem 0}
+.actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.ghost{
+  flex:1;min-width:140px;padding:12px;border:1.5px solid var(--brand);background:#fff;color:var(--brand-deep);
+  border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:.12s;
+}
+.ghost:hover{background:var(--accent)}
+
+/* footer */
+.site-footer{padding:26px 0 40px;color:var(--muted);font-size:13px;text-align:center}
+
+@media (max-width:560px){
+  .routine{grid-template-columns:1fr}
+  .site-header{padding:28px 0 22px}
+}
