@@ -178,25 +178,79 @@ const $=id=>document.getElementById(id);
 let lang="kz";
 
 /* ---------- language detection (heuristic, honest) ----------
-   Kazakh and Russian share the Cyrillic alphabet, so perfect word-level detection
-   is impossible. This is an ESTIMATE built from three signals:
-   1) Kazakh has 9 unique letters (ә ғ қ ң ө ұ ү һ і) Russian never uses  -> Kazakh
-   2) a lexicon of very common Russian words + a few Russian-only letters   -> Russian
-   3) a lexicon of very common Kazakh words that use only shared letters    -> Kazakh
-   Anything left over is "shared" (could be either). Latin-script tokens are flagged. */
+   Kazakh and Russian share the Cyrillic alphabet, and in real life Kazakhs very
+   often type Kazakh WITHOUT its 9 special letters (қ->к, ғ->г, ң->н, ө->о, ұ/ү->у,
+   ә->а, і->и, һ->х): "жақсы"->"жаксы", "күн"->"кун", "үйге"->"уйге". A naive detector
+   calls those Russian or "shared"; Aralas is built so reduced-spelling Kazakh is
+   still recognised as Kazakh. Each word is scored on several signals:
+     1) the 9 unique Kazakh letters (ә ғ қ ң ө ұ ү һ і)          -> definitely Kazakh
+     2) Russian-only letters (ё ъ э)                             -> definitely Russian
+     3) a Kazakh lexicon matched in BOTH proper and reduced (letter-folded) form
+     4) morphology: a Kazakh ROOT + a Kazakh ending (кел+ди, бар+ды) -> Kazakh, while
+        Russian look-alikes (заво+ды, наро+ды) fail because the stem is not a root
+     5) a lexicon of very common Russian words + Russian endings  -> Russian
+   The strongest signal wins; a genuine tie stays "shared". An honest estimate, not truth. */
 const KZ_LETTERS=/[әғқңөұүһі]/;
-const RU_ONLY=/[ёъэщ]/;
+const RU_ONLY=/[ёъэ]/;                 // ё ъ э are Russian-only in practice (щ stays: ащы/тұщы are native Kazakh)
+const NON_KZ=/[вфц]/g;                  // в ф ц occur in Kazakh only via Russian loanwords
+const KZ_FOLD={"ә":"а","ғ":"г","қ":"к","ң":"н","ө":"о","ұ":"у","ү":"у","һ":"х","і":"и"};
+const reduce=s=>s.replace(/[әғқңөұүһі]/g,c=>KZ_FOLD[c]);   // fold the 9 special letters to bare look-alikes
 const LATIN=/[a-z]/i, CYR=/[а-яёәғқңөұүһі]/i;
 const RU_WORDS=new Set(("и в не что это как я ты он она оно мы вы они был была было были если когда где для из по за до но а же бы ли уже ещё еще очень тоже потому чтобы который которая сейчас тогда здесь там всё все так вот да нет можно нужно надо хочу хочет будет есть меня тебя его её ее нас вас их мне тебе ему ей нам вам им себя свой своя мой моя твой наш ваш этот эта эти тот та те кто чей чем чём про над под при без через между более менее самый просто конечно спасибо привет пока хорошо плохо потом сегодня завтра вчера сколько почему зачем куда откуда или либо значит наверное кажется вообще именно даже почти чуть снова опять всегда никогда иногда часто редко много мало тут туда сюда сам сама сами свои этого этому только лишь пусть давай ладно окей блин типа короче вроде похоже была было будут будем буду можешь может нельзя должен должна хотя пока сразу теперь потому-что нибудь-то").split(" "));
 const KZ_WORDS=new Set(("мен сен ол біз сіз бар жоқ деп сол осы мына ана бұл ма ба па ме бе пе да де та те ғой керек емес болады болды енді тағы содан сосын себебі өйткені сияқты туралы үшін менен сенен одан маған саған оған бізге сізге ол ма деген дейін кейін бойынша арқылы жайлы қой ғана тек әлі әрине рахмет сәлем қалай неге қашан қайда қанша жақсы жаман бүгін ертең кеше еді екен болатын болсын мынау анау сонау дегенмен бірақ солай былай осылай ешкім ешнәрсе барлығы бәрі кейбір біреу әркім әрбір бірнеше сондықтан иә ия жарайды дейді деді дейміз менің сенің оның біздің сіздің жаңа ескі үлкен кіші жақын алыс уақыт адам бала үй мектеп жыл түн таң кеш апта ай ертеңгі бүгінгі кешегі мұнда сонда осында қайдан неше сонымен яғни әсіресе тіпті мүлдем әрдайым кейде жиі сирек көп аз ия жарайды рас өтірік дұрыс бұрыс").split(" "));
 
+/* extra vocabulary layered onto the base lexicons above */
+"школа школе школу школы тема темы темасы успел успела успею успеешь дела делать день дней года время работа работе работать мама папа брат сестра друг город улица улицы деньги ничего страны весны команда правда секунда города заводы народ".split(" ").forEach(w=>RU_WORDS.add(w));
+"күн күндер мұғалім ұстаз оқушы сабақ тақырып тапсырма үй қала дала жол ел халық тіл қазақ қазақша орыс орысша ағылшын дос апа аға іні қарындас әке шеше бауыр отбасы кітап дәптер қалам сынып емтихан баға білім оқу жазу сөз сөйлем сұрақ жауап жұмыс ақша нан су сүт шай ет тамақ асхана дүкен дәрігер аурухана ауыл қазір керемет тамаша маңызды қиын оңай жаңадан бұрын уақытында барлық".split(" ").forEach(w=>KZ_WORDS.add(w));
+
+/* folded lexicon + Kazakh roots power the reduced-spelling & morphology matching */
+const KZ_REDUCED=new Set(); KZ_WORDS.forEach(w=>KZ_REDUCED.add(reduce(w)));
+const KZ_ROOTS=new Set(("кел кет бар бер айт де кор бил окы жаз ойна жур тур отыр жат кара тында сойле жаса исте кыл бол ал сал аш жап кир шык кайт тус тусин тусиндир таста битир баста аякта апар акел сура кол жет улгер кездес кой иш же уйрен уйрет байка тап тусир жибер унат карай ойла").split(" "));
+KZ_WORDS.forEach(w=>KZ_ROOTS.add(reduce(w)));   // every lexicon word is a valid stem too
+
+/* Kazakh endings (folded), longest-first, stripped one or twice to test root+ending forms */
+const STRIP=("майды мейди байды бейди пайды пейди атын етин йтын йтин тирди дирди динди сынды синди "+
+ "дым дим тым тим дык дик тык тик мын мин сын син сыз сиз мыз миз быз биз лар лер дар дер тар тер "+
+ "нын нин дын дин тын тин нан нен дан ден тан тен нда нде ган ген кан кен ады еди йды йди уда уде "+
+ "ныки ники дай дей тай тей пен бен мен шы ши ды ди ты ти ны ни га ге ка ке са се сы си ым им ын ин ып ип ак ек у")
+ .split(" ").sort((a,b)=>b.length-a.length);
+
+function stemIsKazakh(f){
+  if(KZ_ROOTS.has(f)||KZ_REDUCED.has(f)) return true;
+  for(const suf of STRIP){
+    if(f.length>suf.length+1 && f.endsWith(suf)){
+      const stem=f.slice(0,-suf.length);
+      if(KZ_ROOTS.has(stem)||KZ_REDUCED.has(stem)) return true;
+      for(const s2 of STRIP){                              // root + derivation + inflection (тусин+дир+ди)
+        if(stem.length>s2.length+1 && stem.endsWith(s2) && KZ_ROOTS.has(stem.slice(0,-s2.length))) return true;
+      }
+    }
+  }
+  return false;
+}
+
+const KZ_SUF_STRONG=/(ған|ген|қан|кен|тын|тін|атын|етін|майды|мейді|дым|дім|дим|тым|тім|тим|дың|дің|тың|тің|мын|мін|сың|сің|сыз|сіз|мыз|міз|быз|біз|дай|дей|тай|тей|дар|дер|тар|тер|лар|лер|нан|нен|дан|ден|тан|тен|ныкі|нікі)$/;
+const RU_SUF=/(ый|ий|ого|его|ому|ему|ыми|ими|ость|ется|ится|ешь|ишь|ают|яют|уют|ует|ился|илась|аешь|уешь|ает)$/;
+
+/* Weighted, honest classifier: strongest Kazakh-vs-Russian signal wins; a real tie stays "shared". */
 function classify(w){
-  const lw=w.toLowerCase();
+  const lw=w.toLowerCase().replace(/[’']/g,"");
   if(LATIN.test(w)&&!CYR.test(w)) return "lat";
-  if(KZ_LETTERS.test(lw)) return "kz";
-  if(KZ_WORDS.has(lw)) return "kz";
-  if(RU_WORDS.has(lw)) return "ru";
-  if(RU_ONLY.test(lw)) return "ru";
+  if(!CYR.test(lw)) return "amb";
+  if(KZ_LETTERS.test(lw)) return "kz";      // a unique Kazakh letter is decisive
+  if(RU_ONLY.test(lw))    return "ru";      // ё ъ э are decisive for Russian
+
+  let kz=0, ru=0; const f=reduce(lw);
+  if(RU_WORDS.has(lw))                    ru+=60;
+  if(KZ_WORDS.has(lw)||KZ_REDUCED.has(f)) kz+=60;   // exact / reduced-spelling lexicon hit
+  else if(stemIsKazakh(f))                kz+=40;    // Kazakh root + Kazakh ending (morphology)
+  if(KZ_SUF_STRONG.test(lw))              kz+=20;
+  if(RU_SUF.test(lw))                     ru+=26;
+  const nk=(lw.match(NON_KZ)||[]).length; if(nk) ru+=8+nk*4;
+
+  if(kz===0&&ru===0) return "amb";
+  if(kz-ru>=12) return "kz";
+  if(ru-kz>=12) return "ru";
   return "amb";
 }
 function tokenize(text){
@@ -239,7 +293,7 @@ const T={
     mixLbl:"Тілдердің үлесі", nmKz:"Қазақша",nmRu:"Орысша",nmAmb:"Ортақ сөздер",nmLat:"Латын/басқа",
     share:"Нәтижені бөлісу", again:"Қайта талдау",
     expS:"Бұл қалай есептеледі? (шынын айтсақ)",
-    expB:"Қазақ пен орыс тілі бір әліпбиді — кириллицаны қолданады, сондықтан әр сөзді 100% дәл ажырату мүмкін емес. Aralas үш белгі бойынша бағалайды: (1) тек қазақ тілінде бар әріптер (ә ғ қ ң ө ұ ү һ і), (2) жиі қолданылатын орыс сөздерінің тізімі, (3) ортақ әріптермен жазылатын жиі қазақ сөздерінің тізімі. Қалғаны «ортақ» деп белгіленеді. Бұл — ойын әрі ой салатын бағалау құралы, ғылыми дәлдік емес.",
+    expB:"Қазақ пен орыс бір әліпбиді — кириллицаны қолданады, әрі көбіміз қазақшаны арнайы әріптерсіз жазамыз (қ→к, ғ→г, ө→о, ү→у, і→и): «жақсы»→«жаксы», «үйге»→«уйге». Aralas осыны ескереді де, әр сөзді бірнеше белгі бойынша бағалайды: (1) тек қазақта бар әріптер (ә ғ қ ң ө ұ ү һ і), (2) тек орыста бар әріптер (ё ъ э), (3) қазақ сөздер тізімі — арнайы әріптермен де, әріпсіз де, (4) сөз құрылысы: қазақ түбір + қазақ жалғауы (кел+ди, бар+ды) қазақша деп танылады, ал ұқсас орыс сөздері (заво+ды) түбірі сәйкеспегендіктен танылмайды. Ең күшті белгі жеңеді; шешілмесе «ортақ» болып қалады. Бұл — ойын әрі ой салатын бағалау, ғылыми дәлдік емес.",
     footer:'Aralas · қазақ-орыс код-ауыстыруын өлшейтін ашық құрал · кітапханасыз, серверсіз, деректерің осы құрылғыда қалады',
     dom:{kz:"Қазақша",ru:"Орысша",mix:"Аралас",none:"—"},
     needMore:"Талдау үшін кемінде бірнеше сөз жаз.",
@@ -264,7 +318,7 @@ const T={
     mixLbl:"Доли языков", nmKz:"Казахский",nmRu:"Русский",nmAmb:"Общие слова",nmLat:"Латиница/другое",
     share:"Поделиться", again:"Заново",
     expS:"Как это считается? (честно)",
-    expB:"Казахский и русский используют одну кириллицу, поэтому идеально различить каждое слово нельзя. Aralas оценивает по трём признакам: (1) буквы, которые есть только в казахском (ә ғ қ ң ө ұ ү һ і), (2) список частых русских слов, (3) список частых казахских слов из общих букв. Остальное помечается «общим». Это игровой и осознающий инструмент-оценка, а не научная точность.",
+    expB:"Казахский и русский используют одну кириллицу, и в жизни многие пишут по-казахски без специальных букв (қ→к, ғ→г, ө→о, ү→у, і→и): «жақсы»→«жаксы», «үйге»→«уйге». Aralas это учитывает и оценивает каждое слово по нескольким признакам: (1) буквы только казахские (ә ғ қ ң ө ұ ү һ і), (2) буквы только русские (ё ъ э), (3) список казахских слов — и в правильном, и в упрощённом написании, (4) морфология: казахский корень + казахское окончание (кел+ди, бар+ды) считается казахским, а похожие русские слова (заво+ды) не проходят, потому что основа не корень. Побеждает сильнейший признак; при равенстве — «общее». Это игровая и осознающая оценка, а не научная точность.",
     footer:'Aralas · открытый инструмент, измеряющий казахско-русское переключение · без библиотек и сервера, данные остаются на устройстве',
     dom:{kz:"Казахский",ru:"Русский",mix:"Смешанный",none:"—"},
     needMore:"Напиши хотя бы несколько слов для анализа.",
