@@ -10,7 +10,7 @@
     --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.18);
     --ink:#eef4f8; --ts:#aebccb; --tm:#728296;
     --water:#38bdf8; --water2:#5eead4; --sand:#a9793f; --salt:#e9e2cf; --rust:#b4531f;
-    --power:#f6b93b; --crop:#54cf7c; --sea:#3aa9e0; --dust:#c98b4b; --bad:#ef4444; --gold:#ffcf5a; --accent:#5eead4;
+    --power:#f6b93b; --crop:#54cf7c; --sea:#3aa9e0; --dust:#c98b4b; --people:#e08ac0; --bad:#ef4444; --gold:#ffcf5a; --accent:#5eead4;
     --grad-accent:linear-gradient(135deg,#7df0dc,#31c4e6 60%,#2f7fe0);
     --grad-gold:linear-gradient(135deg,#ffe08a,#f6b93b);
     --r:20px; --shadow:0 24px 60px rgba(0,0,0,.5);
@@ -87,6 +87,17 @@
   .bcard .bmeta{font-size:11px;color:var(--tm);margin-top:6px;min-height:15px}
   .bcard .bmeta b{color:var(--ts)}
 
+  /* human-toll strip */
+  .toll{display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px}
+  @media(min-width:640px){ .toll{grid-template-columns:repeat(3,1fr)} }
+  .tcard{padding:15px 16px}
+  .tcard .tt{display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--tm);font-weight:700}
+  .tcard .tt i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .tcard .tv{font-size:27px;font-weight:800;letter-spacing:-.02em;margin-top:8px;line-height:1}
+  .tcard .tv small{font-size:12px;font-weight:600;color:var(--ts);margin-left:3px}
+  .tcard .tmeta{font-size:11px;color:var(--tm);margin-top:7px;min-height:15px}
+  .tcard .tmeta b{color:var(--ts)}
+
   /* control deck */
   .deck{display:flex;flex-direction:column;gap:16px}
   .deck .presets{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
@@ -154,7 +165,8 @@
   .scoremeta .sname{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--tm);font-weight:700}
   .scoremeta .stitle{font-size:20px;font-weight:800;margin:3px 0 4px;letter-spacing:-.01em}
   .scoremeta .sdesc{font-size:13px;color:var(--ts);max-width:520px}
-  .subscores{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:2px}
+  .subscores{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:2px}
+  @media(min-width:640px){ .subscores{grid-template-columns:repeat(4,1fr)} }
   .ss{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:13px;padding:12px 13px}
   .ss .l{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--tm);font-weight:700;display:flex;align-items:center;gap:6px}
   .ss .l i{width:7px;height:7px;border-radius:50%;display:inline-block}
@@ -208,7 +220,7 @@
   details.exp summary::before{content:"▸";transition:.2s;display:inline-block}
   details.exp[open] summary::before{transform:rotate(90deg)}
   .eqwrap{display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px}
-  @media(min-width:640px){ .eqwrap{grid-template-columns:1fr 1fr 1fr} }
+  @media(min-width:640px){ .eqwrap{grid-template-columns:1fr 1fr} }
   .eq{background:rgba(255,255,255,.025);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
   .eq .f{font-size:18px;font-weight:800;letter-spacing:.01em;margin-bottom:6px}
   .eq .f .op{color:var(--accent)}
@@ -395,13 +407,33 @@
       <div class="scoremeta">
         <div class="sname">Basin steward score</div>
         <div class="stitle" id="scoreTitle">Run a policy</div>
-        <div class="sdesc" id="scoreDesc">Balance three things at once: keep a sea alive, keep the lights on, feed the country. Saving even the North Aral counts. Beating the real history (which scored low) is the challenge.</div>
+        <div class="sdesc" id="scoreDesc">Balance four things at once: keep a sea alive, keep the lights on, feed the country, and protect the people downwind. Saving even the North Aral counts. Beating the real history (which scored low) is the challenge.</div>
       </div>
     </div>
     <div class="subscores">
       <div class="ss"><div class="l"><i style="background:var(--sea)"></i>Living sea</div><div class="v" id="ssSea">—</div><div class="bar"><i id="ssSeaB" style="background:var(--sea)"></i></div></div>
       <div class="ss"><div class="l"><i style="background:var(--power)"></i>Power</div><div class="v" id="ssPow">—</div><div class="bar"><i id="ssPowB" style="background:var(--power)"></i></div></div>
       <div class="ss"><div class="l"><i style="background:var(--crop)"></i>Food</div><div class="v" id="ssCrop">—</div><div class="bar"><i id="ssCropB" style="background:var(--crop)"></i></div></div>
+      <div class="ss"><div class="l"><i style="background:var(--people)"></i>People</div><div class="v" id="ssPeople">—</div><div class="bar"><i id="ssPeopleB" style="background:var(--people)"></i></div></div>
+    </div>
+  </div>
+
+  <!-- HUMAN TOLL -->
+  <div class="toll">
+    <div class="panel tcard rise">
+      <div class="tt"><i style="background:var(--crop)"></i>Fishery livelihoods</div>
+      <div class="tv" id="tFish">—</div>
+      <div class="tmeta" id="tFishMeta">jobs on the water</div>
+    </div>
+    <div class="panel tcard rise">
+      <div class="tt"><i style="background:var(--dust)"></i>In the dust shadow</div>
+      <div class="tv" id="tPeople">—</div>
+      <div class="tmeta" id="tPeopleMeta">people breathing salt &amp; pesticide dust</div>
+    </div>
+    <div class="panel tcard rise">
+      <div class="tt"><i style="background:var(--people)"></i>Respiratory harm</div>
+      <div class="tv" id="tHealth">—</div>
+      <div class="tmeta" id="tHealthMeta">illness pressure downwind</div>
     </div>
   </div>
 
@@ -462,9 +494,11 @@
           <div class="d"><b style="color:var(--rust)">Salinity — chemistry.</b> Concentration = dissolved-salt mass ÷ water volume. Evaporation and irrigation remove fresh <i>water</i>; the <i>salt stays</i>. As a sea shrinks, C climbs — how the Aral went from ~10 g/L to over 70, and the fish died.</div></div>
         <div class="eq"><div class="f">C ≤ C<span class="op">sat</span> → salt falls out</div>
           <div class="d"><b style="color:var(--dust)">Saturation &amp; dust — chemistry.</b> Water can only hold so much salt. Past saturation the extra salt <i>precipitates</i> onto the drying bed as a white crust — and that exposed salt is what the wind lifts into the Aralkum's toxic dust storms.</div></div>
+        <div class="eq"><div class="f">dust → lungs</div>
+          <div class="d"><b style="color:var(--people)">The human cost.</b> That dry bed is not just salt: decades of cotton left DDT and defoliant residue in it. The storms carry the salt-and-pesticide dust over ~2M people downwind in Karakalpakstan — driving respiratory disease and killing a 60,000-job fishery. The chemistry ends in a clinic.</div></div>
       </div>
       <div class="honest"><b>Honest note.</b> Upstream is an educational systems model on realistic, published-order numbers — it shows how the tradeoffs are shaped, it is not a validated forecast of any real year.</div>
-      <div class="srcline">Two rivers (Syr Darya ≈37, Amu Darya ≈79 km³/yr), 1960 sea ≈1,064 km³ / 68,000 km² / 10 g/L; measured area, volume &amp; salinity 1960–2010; 1987 N/S split; 2005 Kok-Aral dam; 2014 eastern basin dried. <b>Source: Wikipedia — Aral Sea / North Aral Sea.</b></div>
+      <div class="srcline">Two rivers (Syr Darya ≈37, Amu Darya ≈79 km³/yr), 1960 sea ≈1,064 km³ / 68,000 km² / 10 g/L; measured area, volume &amp; salinity 1960–2010; 1987 N/S split; 2005 Kok-Aral dam; 2014 eastern basin dried; ~60,000-job fishery; ~2M people in the Karakalpakstan dust shadow; DDT/defoliant residue in the dust. <b>Source: Wikipedia — Aral Sea / North Aral Sea.</b></div>
     </details>
   </section>
 
@@ -525,7 +559,12 @@ function simulate(p){
     const crust=Math.min((S.Mprec+N.Mprec)/6e15,1);
     const dust=Math.max(0,Math.min(100,Math.round(100*exposedS*(0.45+0.55*crust))));
     const saltGt=(S.Mprec+N.Mprec)/1e15;       // grams -> gigatonnes
-    const rec={y,V:Vtot,area,level,salinity:salWhole,dust,saltGt,
+    // ---- human toll: the fishery, the dust-shadow population, respiratory harm ----
+    const northAliveY=Cn<24, southAliveY=Cs<24;   // a fishery needs water fresher than ~24 g/L
+    const fisheryJobs=Math.round(60000*((southAliveY?0.8:0)+(northAliveY?0.2:0))); // South held ~80% of it
+    const dustPeopleM=+(((dust/100)*2.5).toFixed(1));   // millions downwind in the salt/pesticide dust
+    const healthHarm=Math.max(0,Math.min(100,Math.round(dust*0.8+(saltGt>2?15:0)))); // respiratory pressure
+    const rec={y,V:Vtot,area,level,salinity:salWhole,dust,saltGt,fisheryJobs,dustPeopleM,healthHarm,
       N:{V:N.V,area:areaN,salinity:Cn}, S:{V:S.V,area:areaS,salinity:Cs}};
     s.push(rec);
     if(y===years)break;
@@ -585,8 +624,9 @@ function scoreOf(f){
   if(southDead)  sea=Math.min(sea,55);   // half the system is a salt desert — cap the credit
   const pow = Math.max(0,Math.min(100,Math.round(100*(f.power||0)/26)));
   const crop = Math.max(0,Math.min(100,Math.round(100*(f.crop||0)/9)));
-  let total = Math.round(0.45*sea + 0.25*pow + 0.30*crop);
-  total = Math.max(0,Math.min(100,total - Math.round((f.dust||0)*0.12)));  // toxic-dust penalty
+  // people pillar: fishery livelihoods retained + inverse of dust-borne respiratory harm
+  const people = Math.max(0,Math.min(100,Math.round(0.6*((f.fisheryJobs||0)/60000*100)+0.4*(100-(f.healthHarm||0)))));
+  let total = Math.max(0,Math.min(100,Math.round(0.35*sea + 0.20*pow + 0.25*crop + 0.20*people)));
   const bothHealthy = f.S&&f.N && f.S.salinity<40 && f.N.salinity<40 && (f.dust||0)<25;
   let title,desc;
   if(bothHealthy&&pow>40&&crop>40){title='Master steward';desc='You held it all — both seas alive, real power, fed fields, and almost no dust. Almost nobody does this.';}
@@ -595,7 +635,7 @@ function scoreOf(f){
   else if(bothHealthy&&(crop<35||pow<25)){title='Sea saved, something sacrificed';desc='The seas live — but food or power paid the bill. Real policy is this tradeoff.';}
   else if(crop>60&&sea<45){title='A working country, a dying sea';desc='The classic Central Asian bind: full fields, a shrinking sea behind them.';}
   else {title='A mixed hand';desc='A middle path — no catastrophe, no triumph. Push one lever without breaking another.';}
-  return {sea,pow,crop,total,title,desc};
+  return {sea,pow,crop,people,total,title,desc};
 }
 
 /* ===== measured real data (published Aral figures; y = year-1960) ===== */
@@ -696,6 +736,15 @@ function setKPI(st){
   el('bsPct').textContent=Math.round(st.S.V/P.S.V0*100);
   el('bnMeta').innerHTML=`salinity <b>${st.N.salinity.toFixed(0)} g/L</b> · ${st.N.salinity<24?'alive':st.N.salinity<50?'stressed':'brine'}`;
   el('bsMeta').innerHTML=`salinity <b>${st.S.salinity.toFixed(0)} g/L</b> · ${st.S.salinity<24?'alive':st.S.salinity<50?'stressed':'brine'}`;
+  // human toll
+  const jobs=st.fisheryJobs||0;
+  el('tFish').innerHTML=fmt(jobs/1000,0)+'k <small>jobs</small>';
+  el('tFishMeta').innerHTML=jobs>50000?'the fishery is working':jobs>0?'<b>only the North Aral fishes</b>':'<b>the fishery is gone</b>';
+  el('tPeople').innerHTML=fmt(st.dustPeopleM||0,1)+'M <small>people</small>';
+  el('tPeopleMeta').textContent=(st.dustPeopleM>1.2)?'salt & pesticide storms downwind':(st.dustPeopleM>0.3?'dust reaching the towns':'little airborne salt');
+  const hh=st.healthHarm||0, hc=hh<25?'var(--crop)':hh<60?'var(--power)':'var(--bad)';
+  el('tHealth').innerHTML='<span style="color:'+hc+'">'+fmt(hh,0)+'</span> <small>/100</small>';
+  el('tHealthMeta').textContent=hh>60?'severe respiratory illness':hh>25?'rising respiratory illness':'low health burden';
 }
 /* ===== charts (with measured overlay + optional 2nd series) ===== */
 function drawLine(canvas,data,key,color,opts={}){
@@ -745,14 +794,17 @@ function verdict(series){
   const stressed=f.demand&&f.delivered<f.demand-1;
   push('var(--crop)',`Crops: ${f.crop.toFixed(1)} Mt/yr${stressed?` — fields wanted ${f.demand.toFixed(0)} km³ but got ${f.delivered.toFixed(0)}; summer water ran short.`:' — fields were fully watered.'}`);
   push('var(--dust)',`Toxic dust risk ${f.dust}/100 — ${f.saltGt.toFixed(1)} Gt of salt precipitated onto the exposed bed.`);
+  const jobs=f.fisheryJobs||0;
+  push('var(--crop)',`Fishery: ${(jobs/1000).toFixed(0)}k livelihoods ${jobs>50000?'— the boats still sail.':jobs>0?'— only the North Aral still fishes.':'— the fishery is gone.'}`);
+  push('var(--people)',`People: ${(f.dustPeopleM||0).toFixed(1)}M downwind of salt & pesticide dust; respiratory harm ${f.healthHarm}/100.`);
   return L;
 }
 function paintScore(f){
   const sc=scoreOf(f);
   el('ring').style.setProperty('--p',sc.total);
   el('scoreV').textContent=sc.total;el('scoreTitle').textContent=sc.title;el('scoreDesc').textContent=sc.desc;
-  el('ssSea').textContent=sc.sea;el('ssPow').textContent=sc.pow;el('ssCrop').textContent=sc.crop;
-  el('ssSeaB').style.width=sc.sea+'%';el('ssPowB').style.width=sc.pow+'%';el('ssCropB').style.width=sc.crop+'%';
+  el('ssSea').textContent=sc.sea;el('ssPow').textContent=sc.pow;el('ssCrop').textContent=sc.crop;el('ssPeople').textContent=sc.people;
+  el('ssSeaB').style.width=sc.sea+'%';el('ssPowB').style.width=sc.pow+'%';el('ssCropB').style.width=sc.crop+'%';el('ssPeopleB').style.width=sc.people+'%';
   lastScore=sc;
 }
 /* ===== run ===== */
@@ -807,10 +859,12 @@ el('saveBtn').onclick=()=>{try{localStorage.setItem('upstream_policy',
 el('csvBtn').onclick=()=>{
   if(!series){toast('Run a policy first');return;}
   const rows=[['year','whole_vol_km3','whole_area_km2','level_m','whole_sal_g_per_L',
-    'north_vol_km3','north_sal','south_vol_km3','south_sal','dust_index','salt_precip_Gt','winter_power_TWh','crop_Mt']];
+    'north_vol_km3','north_sal','south_vol_km3','south_sal','dust_index','salt_precip_Gt','winter_power_TWh','crop_Mt',
+    'fishery_jobs','dust_people_M','respiratory_harm']];
   series.forEach(s=>rows.push([1960+s.y,s.V.toFixed(1),Math.round(s.area),s.level.toFixed(1),s.salinity.toFixed(1),
     s.N.V.toFixed(1),s.N.salinity.toFixed(1),s.S.V.toFixed(1),s.S.salinity.toFixed(1),
-    s.dust,s.saltGt.toFixed(2),(s.power||0).toFixed(2),(s.crop||0).toFixed(2)]));
+    s.dust,s.saltGt.toFixed(2),(s.power||0).toFixed(2),(s.crop||0).toFixed(2),
+    s.fisheryJobs,s.dustPeopleM,s.healthHarm]));
   const blob=new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='upstream-run.csv';
   document.body.appendChild(a);a.click();a.remove();toast('CSV downloaded');
@@ -827,11 +881,11 @@ el('shareBtn').onclick=async()=>{
   x.fillStyle='#eef4f8';x.font='800 180px '+F;x.fillText(lastScore.total,W/2,440);
   x.fillStyle='#9fb2c4';x.font='500 40px '+F;x.fillText('Basin steward score',W/2,508);
   x.fillStyle='#ffffff';x.font='800 50px '+F;x.fillText(lastScore.title,W/2,610);
-  const cells=[['Living sea',lastScore.sea,'#3aa9e0'],['Power',lastScore.pow,'#f6b93b'],['Food',lastScore.crop,'#54cf7c']];
-  cells.forEach((cl,i)=>{const cx=W/2+(i-1)*300;x.fillStyle=cl[2];x.font='800 88px '+F;x.fillText(cl[1],cx,780);
-    x.fillStyle='#9fb2c4';x.font='500 34px '+F;x.fillText(cl[0],cx,832);});
-  x.fillStyle='#c98b4b';x.font='600 34px '+F;x.fillText(`toxic dust ${f.dust}/100 · ${f.saltGt.toFixed(1)} Gt salt precipitated`,W/2,910);
-  x.fillStyle='#6c7f90';x.font='400 30px '+F;x.fillText(`North ${f.N.salinity.toFixed(0)} g/L · South ${f.S.salinity.toFixed(0)} g/L · power ${f.power.toFixed(1)} TWh`,W/2,965);
+  const cells=[['Living sea',lastScore.sea,'#3aa9e0'],['Power',lastScore.pow,'#f6b93b'],['Food',lastScore.crop,'#54cf7c'],['People',lastScore.people,'#e08ac0']];
+  cells.forEach((cl,i)=>{const cx=W/2+(i-1.5)*236;x.fillStyle=cl[2];x.font='800 76px '+F;x.fillText(cl[1],cx,782);
+    x.fillStyle='#9fb2c4';x.font='500 30px '+F;x.fillText(cl[0],cx,828);});
+  x.fillStyle='#e08ac0';x.font='600 32px '+F;x.fillText(`${(f.fisheryJobs/1000).toFixed(0)}k fishery jobs · ${(f.dustPeopleM||0).toFixed(1)}M in the dust shadow`,W/2,908);
+  x.fillStyle='#6c7f90';x.font='400 29px '+F;x.fillText(`North ${f.N.salinity.toFixed(0)} g/L · South ${f.S.salinity.toFixed(0)} g/L · dust ${f.dust}/100 · power ${f.power.toFixed(1)} TWh`,W/2,962);
   c.toBlob(async b=>{
     const file=new File([b],'upstream-score.png',{type:'image/png'});
     try{ if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Upstream'});return;} }catch(e){}
@@ -847,6 +901,7 @@ el('mileflag').innerHTML=MILES.map(m=>`<div class="m">${m.t}</div>`).join('');
 /* initial */
 window.addEventListener('load',()=>{
   const st0={y:0,V:P.V0tot,area:P.A0tot,level:P.L0,salinity:P.N.C0,dust:0,saltGt:0,
+    fisheryJobs:60000,dustPeopleM:0,healthHarm:0,
     N:{V:P.N.V0,area:P.N.A0,salinity:P.N.C0}, S:{V:P.S.V0,area:P.S.A0,salinity:P.S.C0},
     power:0,crop:0,demand:70,delivered:70,dikeOn:false};
   paintSea(st0);setKPI(st0);
