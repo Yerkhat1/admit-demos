@@ -275,7 +275,7 @@ function analyze(text){
   const ident=c.kz+c.ru;
   const kzShare=ident?Math.round(c.kz/ident*100):0;
   const ruShare=ident?100-kzShare:0;
-  return {toks,words:W,c,pct:{kz:Math.round(c.kz/W*100),ru:Math.round(c.ru/W*100),amb:Math.round(c.amb/W*100),lat:Math.round(c.lat/W*100)},switchRate,bilingual:seq.length,ident,kzShare,ruShare};
+  return {toks,words:W,wordsReal:words.length,c,pct:{kz:Math.round(c.kz/W*100),ru:Math.round(c.ru/W*100),amb:Math.round(c.amb/W*100),lat:Math.round(c.lat/W*100)},switchRate,bilingual:seq.length,ident,kzShare,ruShare};
 }
 
 /* ---------- UI strings ---------- */
@@ -303,6 +303,7 @@ const T={
       kz:["Қазақ тілі басым","Сенің сөйлеуіңде қазақ тілі жетекші. Орыс тілі тек қосымша рөл атқарады."],
       ru:["Орыс тілі басым","Сенің сөйлеуіңде орыс тілі жетекші. Қазақ тілі жұқа қабат болып қана көрінеді."],
       bal:["Тепе-тең қостілді","Екі тіл де мықты, бірақ сен оларды араластырмай, кезек-кезек қолданасың."],
+      latin:["Латын мәтіні","Мәтінің негізінен латынша немесе басқа тілде жазылған. Aralas қазақ-орыс кириллицасын өлшейді, сондықтан кирилл әрпімен жазып көр."],
       mix:["Аралас профиль","Нәтиже ортада: не таза бір тіл, не тұрақты ауысу байқалмайды. Тағы мәтін қосып көр."]}
   },
   ru:{ tag:"отпечаток твоего казахского и русского",
@@ -328,6 +329,7 @@ const T={
       kz:["Казахский преобладает","В твоей речи ведёт казахский. Русский входит лишь как вспомогательный."],
       ru:["Русский преобладает","В твоей речи ведёт русский. Казахский виден тонким слоем."],
       bal:["Сбалансированный билингв","Оба языка сильны, но ты их не смешиваешь, а используешь по очереди."],
+      latin:["Латиница","Твой текст в основном на латинице или другом языке. Aralas измеряет казахско-русскую кириллицу, напиши кириллицей."],
       mix:["Смешанный профиль","Середина — ни один язык не чист и нет устойчивого переключения. Добавь ещё текста."]}
   }
 };
@@ -359,6 +361,7 @@ function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 function verdict(a){
   const x=t().verdict;
   // decide from the Kazakh-vs-Russian ratio among IDENTIFIABLE words, not % of total
+  if(a.pct.lat>=60 && a.ident<Math.max(3,a.words*0.12)) return x.latin;   // mostly Latin/other, out of scope
   if(a.ident < Math.max(3, a.words*0.12)) return x.mix;   // too little we can tell apart
   if(a.switchRate>=28 && a.kzShare>=25 && a.ruShare>=25) return x.heavy;
   if(a.kzShare>=70) return x.kz;
@@ -366,12 +369,13 @@ function verdict(a){
   if(a.kzShare>=30 && a.ruShare>=30) return x.bal;
   return x.mix;
 }
-function domLang(a){const x=t().dom;if(a.ident<3)return x.none;if(Math.abs(a.kzShare-a.ruShare)<16)return x.mix;return a.kzShare>=a.ruShare?x.kz:x.ru;}
+function domLang(a){const x=t().dom;if(a.ident<Math.max(3,a.words*0.12))return x.none;if(Math.abs(a.kzShare-a.ruShare)<16)return x.mix;return a.kzShare>=a.ruShare?x.kz:x.ru;}
 
 function run(){
   const text=$("ta").value.trim();
-  if(text.split(/\s+/).filter(Boolean).length<2){toast(t().needMore);return;}
-  const a=analyze(text); last=a;
+  const a=analyze(text);
+  if(a.wordsReal<2){toast(t().needMore);return;}   // count real detected words, not whitespace chunks
+  last=a;
   // fingerprint
   $("fp").innerHTML=a.toks.map(tk=>tk.word?`<span class="w ${tk.cat}">${esc(tk.t)}</span>`:esc(tk.t)).join("");
   // tiles
@@ -397,14 +401,14 @@ function shareCard(){
   const a=last,x=t(),c=$("cardCanvas"),g=c.getContext("2d"),W=1080,H=1080,F="'Inter',-apple-system,Segoe UI,Roboto,Arial,sans-serif";
   g.fillStyle="#070a12";g.fillRect(0,0,W,H);
   const bg=g.createLinearGradient(0,0,W,H);bg.addColorStop(0,"rgba(45,212,191,.30)");bg.addColorStop(.55,"rgba(109,110,244,.16)");bg.addColorStop(1,"rgba(168,85,247,.24)");g.fillStyle=bg;g.fillRect(0,0,W,H);
-  g.fillStyle="#0c1019";g.strokeStyle="rgba(255,255,255,.14)";g.lineWidth=3;g.beginPath();g.roundRect(60,60,W-120,H-120,44);g.fill();g.stroke();
+  g.fillStyle="#0c1019";g.strokeStyle="rgba(255,255,255,.14)";g.lineWidth=3;roundRectPath(g,60,60,W-120,H-120,44);g.fill();g.stroke();
   g.textAlign="center";
   g.fillStyle="#2dd4bf";g.font="800 42px "+F;g.fillText("ARALAS",W/2,175);
   g.fillStyle="#aeb8cc";g.font="500 30px "+F;g.fillText(x.tag,W/2,222);
   const vd=verdict(a);
   g.fillStyle="#ffffff";g.font="900 60px "+F;wrapText(g,vd[0],W/2,340,W-220,66);
   // three big numbers
-  const cells=[[a.kzShare+"%",x.nmKz,"#2dd4bf"],[a.switchRate+"%",x.lSwitch,"#f5b942"],[a.ruShare+"%",x.nmRu,"#a855f7"]];
+  const cells=[[a.pct.kz+"%",x.nmKz,"#2dd4bf"],[a.switchRate+"%",x.lSwitch,"#f5b942"],[a.pct.ru+"%",x.nmRu,"#a855f7"]];
   cells.forEach((cl,i)=>{const cx=W/2+(i-1)*300;g.fillStyle=cl[2];g.font="900 100px "+F;g.fillText(cl[0],cx,600);
     g.fillStyle="#aeb8cc";g.font="500 30px "+F;g.fillText(cl[1],cx,650);});
   // mini stacked bar
