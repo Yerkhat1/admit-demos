@@ -58,6 +58,61 @@
   .chip{font-size:12px;color:var(--ink-dim);border:1px solid var(--line);background:var(--panel);padding:7px 12px;border-radius:999px;backdrop-filter:blur(6px)}
   .chip b{color:var(--ink)}
 
+  /* ---------- challenge / missions ---------- */
+  .chalbar{margin-bottom:22px}
+  .modeswitch{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .mode{font:600 13px/1 inherit;color:var(--ink-dim);background:var(--panel);border:1px solid var(--line);
+    border-radius:999px;padding:10px 16px;cursor:pointer;transition:.15s}
+  .mode.on{color:#06121f;background:linear-gradient(135deg,#7be0c0,#37c0d6 60%,#2f8fe0);border-color:transparent;box-shadow:0 8px 20px -8px rgba(55,192,214,.6)}
+  .mode:hover{border-color:var(--line-strong)}
+  .starcount{margin-left:auto;font-weight:800;color:var(--power);font-size:15px}
+  .starcount .sm{color:var(--ink-faint);font-weight:600;font-size:12px}
+  .mrail{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 9px}
+  .mcard{flex:0 0 auto;text-align:left;display:flex;gap:10px;align-items:center;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 13px;cursor:pointer;transition:.15s;color:var(--ink)}
+  .mcard:hover{border-color:var(--line-strong);transform:translateY(-1px)}
+  .mcard.on{border-color:var(--sea);background:rgba(55,192,214,.12);box-shadow:0 8px 20px -10px rgba(55,192,214,.5)}
+  .mcard .mi{font-size:20px;flex:none}
+  .mcard .mn{font-weight:700;font-size:13px;white-space:nowrap}
+  .mstars,.bfstars,.mrstars{letter-spacing:1.5px;white-space:nowrap}
+  .st{color:#3a4a63}.st.on{color:var(--power)}
+  .briefing{background:var(--panel-solid);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+  .bfhead{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+  .bficon{font-size:26px;flex:none}
+  .bfname{font-weight:800;font-size:16px}
+  .bfwho{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-top:2px}
+  .bfbrief{color:var(--ink-dim);font-size:13.5px;margin:6px 0 10px}
+  .bftwist{color:#ffe0b0;background:rgba(255,171,94,.12);border:1px solid rgba(255,171,94,.32);border-radius:10px;padding:8px 11px;font-size:12.5px;margin-bottom:10px}
+  .bfgoals{display:flex;flex-direction:column;gap:5px}
+  .bfg{font-size:13px;color:var(--ink)}
+  .bfg .bfgn{color:var(--power);margin-right:8px;letter-spacing:1px}
+  .bfhint{font-size:12px;color:var(--ink-faint);margin-top:10px}
+  .missionResult{display:none;margin-top:12px;background:var(--panel-solid);border:1px solid var(--line-strong);border-radius:16px;padding:16px 18px}
+  .missionResult.show{display:block}
+  .mrhead{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .mrstars{font-size:22px}
+  .mrtitle{font-weight:800;font-size:15px}
+  .grows{display:flex;flex-direction:column;gap:4px;margin-bottom:6px}
+  .grow{font-size:13px;display:flex;gap:9px;align-items:flex-start}
+  .grow .gk{font-weight:800;flex:none}
+  .grow.ok{color:#bff0d2}.grow.ok .gk{color:var(--crop)}
+  .grow.no{color:var(--ink-faint)}.grow.no .gk{color:#55677f}
+  .coach{font-size:12.5px;color:#ffe0b0;background:rgba(255,171,94,.10);border-radius:10px;padding:9px 12px;margin-top:6px}
+  .mrbtns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .arche{font-size:12.5px;color:var(--ink-dim);margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+  .arche .arlab{color:var(--ink-faint)}
+  .arche b{color:var(--sea)}
+  .riverdebrief{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(6px)}
+  .riverdebrief>summary{cursor:pointer;list-style:none;padding:16px 20px;font-weight:700;font-size:14px;color:var(--ink);display:flex;align-items:center;gap:9px}
+  .riverdebrief>summary::-webkit-details-marker{display:none}
+  .riverdebrief>summary .dchev{margin-left:auto;color:var(--ink-faint);transition:.2s}
+  .riverdebrief[open]>summary .dchev{transform:rotate(90deg)}
+  .riverdebrief .dbody{padding:0 20px 20px}
+  .dfact{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+  .dfact .dico{font-size:20px;flex:none}
+  .dfact p{color:var(--ink-dim);font-size:13px;margin:0}
+  .dsrc{font-size:11px;color:var(--ink-faint);margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
+
   /* ---------- layout ---------- */
   .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
   @media (max-width:900px){.grid{grid-template-columns:1fr}}
@@ -188,6 +243,20 @@
       <span class="chip">Model: <b>physics + hydrology</b></span>
     </div>
   </header>
+
+  <!-- CHALLENGE BAR -->
+  <section class="chalbar">
+    <div class="modeswitch">
+      <button id="mMissions" class="mode on">🎯 Missions</button>
+      <button id="mSandbox" class="mode">🧪 Free play</button>
+      <div class="starcount">★ <span id="starTotal">0</span><span class="sm">/<span id="starMax">18</span></span></div>
+    </div>
+    <div id="missionWrap">
+      <div class="mrail" id="missionRail"></div>
+      <div class="briefing" id="briefing"></div>
+      <div class="missionResult" id="missionResult"></div>
+    </div>
+  </section>
 
   <div class="grid">
     <!-- ============ MAP ============ -->
@@ -406,6 +475,7 @@
           <div class="verdict">
             <div class="title" id="verdictTitle">Set a policy and run</div>
             <p id="verdictText">Choose how you release water from each dam, how hard the farms divert, and what the climate does. Then run three decades and see who wins and who dries out.</p>
+            <div class="arche" id="arche" style="display:none"></div>
           </div>
         </div>
       </div>
@@ -465,6 +535,11 @@
 
       <p class="note" style="margin-top:14px">Sources for the real-history markers and parameters: published Aral Sea Basin figures (river flows, reservoir capacities, Aral area/level/volume 1960–2010). Numbers are realistic-order for teaching, not an operational prediction.</p>
     </div>
+  </details>
+
+  <details class="riverdebrief">
+    <summary>📖 What really happened — the true story behind your run <span class="dchev">▸</span></summary>
+    <div class="dbody" id="debriefBody"></div>
   </details>
 
   <footer>
@@ -808,9 +883,10 @@
   // ---------------------------------------------------------------------------
   // SCORE + VERDICT
   // ---------------------------------------------------------------------------
-  function scoreRun(){
+  function scoreRun(results){
+    results = results || RESULTS;
     // average the final third of the run — the outcome you actually steered toward
-    const tail = RESULTS.slice(-10);
+    const tail = results.slice(-10);
     const avg = k => tail.reduce((a,r)=>a+k(r),0)/tail.length;
     const power = clamp(avg(r=>r.powerTWh)/16, 0, 1);
     // rescale to PLAYABLE ranges: 80% crops and ~half-full sea are the realistic frontier,
@@ -856,11 +932,15 @@
   // RUN
   // ---------------------------------------------------------------------------
   function run(policyFn){
-    RESULTS = simulate(policyFn);
+    const wrapped = (missionMode && activeMission && activeMission.twist && activeMission.twist.apply)
+      ? (y)=>{ const p=policyFn(y); activeMission.twist.apply(p); return p; }
+      : policyFn;
+    RESULTS = simulate(wrapped);
     const scrub=$("scrub"); scrub.max=RESULTS.length-1; scrub.value=RESULTS.length-1;
     renderScore();
     renderYear(RESULTS.length-1);
     setScrubLabel(RESULTS.length-1);
+    if(!booting){ renderArchetype(); renderMissionResult(); }
   }
   function runFromSliders(){
     stopPlay();
@@ -922,6 +1002,177 @@
   }
 
   // ---------------------------------------------------------------------------
+  // CHALLENGE / MISSION LAYER
+  // ---------------------------------------------------------------------------
+  let missionMode = true, activeMission = null, missionStars = {}, booting = true;
+  try { missionStars = JSON.parse(localStorage.getItem('upstream_river_stars')||'{}')||{}; } catch(e){ missionStars={}; }
+
+  // the score the real 1960→2010 policy earns — the number to beat
+  let HIST_SCORE = 40;
+  try { HIST_SCORE = scoreRun(simulate(PRESETS.history.policy)).score; } catch(e){}
+
+  const CNAME = {KGZ:'Kyrgyzstan',TJK:'Tajikistan',UZB:'Uzbekistan',TKM:'Turkmenistan',KAZ:'Kazakhstan'};
+  const minSat = f => Math.min.apply(null, Object.values(f.countries));
+
+  const MISSIONS = [
+   {id:'power', name:'Power to the mountains', icon:'⚡', who:'Kyrgyzstan · Tajikistan — upstream',
+    brief:'The upstream republics have no oil, only mountains and meltwater. Release it through the turbines in winter and the lights stay on. But that water then arrives downstream frozen and out of season — and the sea still has to survive.',
+    goals:[
+     {label:'Electricity ≥ 12 TWh/yr', test:f=>f.powerTWh>=12},
+     {label:'Electricity ≥ 16 TWh/yr', test:f=>f.powerTWh>=16},
+     {label:'…and the Aral still lives (level ≥ 38 m)', test:f=>f.powerTWh>=16&&f.level>=38}]},
+   {id:'cotton', name:'Cotton and bread', icon:'🌾', who:'Uzbekistan · Turkmenistan — downstream',
+    brief:'Downstream, cotton is the economy and the Karakum canal drinks the Amu Darya. Grow the harvest — but every drop pulled to the fields is a drop the sea never sees.',
+    goals:[
+     {label:'Crops ≥ 60% of demand', test:f=>f.cropPct>=60},
+     {label:'Crops ≥ 80% of demand', test:f=>f.cropPct>=80},
+     {label:'…without emptying the sea (level ≥ 31 m)', test:f=>f.cropPct>=80&&f.level>=31}]},
+   {id:'peace', name:'Keep the peace', icon:'🕊️', who:'All five republics',
+    brief:'This is the real problem of the basin: one river system, five countries, no one in charge. Upstream wants winter power, downstream wants summer water, Kazakhstan wants its sea. Leave no one furious.',
+    goals:[
+     {label:'Every country at least 35% satisfied', test:f=>minSat(f)>=0.35},
+     {label:'Every country at least 50% satisfied', test:f=>minSat(f)>=0.50},
+     {label:'Every country at least 60% satisfied', test:f=>minSat(f)>=0.60}]},
+   {id:'aral', name:'Save the Aral', icon:'🌊', who:'Kazakhstan · the North Aral',
+    brief:'By the 2000s the sea was a fraction of itself. Getting the level back up means holding water in the river instead of on the fields — and someone downstream will feel it. See how much sea you can rescue without starving the farms.',
+    goals:[
+     {label:'Aral level recovers to ≥ 34 m', test:f=>f.level>=34},
+     {label:'Aral level recovers to ≥ 42 m', test:f=>f.level>=42},
+     {label:'…while still feeding people (crops ≥ 50%)', test:f=>f.level>=42&&f.cropPct>=50}]},
+   {id:'drought', name:'The drought decade', icon:'🏜️', who:'A hotter, thinner basin',
+    brief:'The snowpack fails and the rivers run low for years. There is not enough water to make everyone happy — the test is whether you can hold the whole system together when it is scarce.',
+    twist:{label:'Climate is forced into a deep drought — the rivers run well below normal.', apply:function(p){ p.climate = Math.min((p.climate||0), -25); }},
+    goals:[
+     {label:'Hold the system together (score ≥ 45)', test:(f,sc)=>sc.score>=45},
+     {label:'Manage the scarcity well (score ≥ 58)', test:(f,sc)=>sc.score>=58},
+     {label:'Thrive despite the drought (score ≥ 70)', test:(f,sc)=>sc.score>=70}]},
+   {id:'beat', name:'Beat history', icon:'🏆', who:'The real 1960→2010 path scored '+HIST_SCORE,
+    brief:'This is the score the real, historical policy earned: '+HIST_SCORE+'/100 — the Soviet cotton program ran the rivers dry and the sea collapsed. Almost anything beats it. The question is by how much.',
+    goals:[
+     {label:'Beat the real history (score > '+HIST_SCORE+')', test:(f,sc)=>sc.score>HIST_SCORE},
+     {label:'Score ≥ 60 while still growing food (crops ≥ 40%)', test:(f,sc)=>sc.score>=60&&f.cropPct>=40},
+     {label:'Score ≥ 75', test:(f,sc)=>sc.score>=75}]},
+  ];
+
+  function starHTML(n){ let s=''; for(let i=0;i<3;i++) s+='<span class="st'+(i<n?' on':'')+'">★</span>'; return s; }
+  function starsFor(m,f,sc){ let n=0; for(const g of m.goals){ if(g.test(f,sc)) n++; else break; } return n; }
+  function totalStars(){ return MISSIONS.reduce((a,m)=>a+(missionStars[m.id]||0),0); }
+
+  function buildRail(){
+    const rail=$("missionRail"); if(!rail) return; rail.innerHTML='';
+    MISSIONS.forEach(m=>{ const got=missionStars[m.id]||0;
+      const b=document.createElement('button'); b.className='mcard'+(activeMission&&activeMission.id===m.id?' on':''); b.dataset.id=m.id;
+      b.innerHTML='<div class="mi">'+m.icon+'</div><div><div class="mn">'+m.name+'</div><div class="mstars">'+starHTML(got)+'</div></div>';
+      b.onclick=()=>selectMission(m.id); rail.appendChild(b); });
+    $("starTotal").textContent=totalStars(); $("starMax").textContent=MISSIONS.length*3;
+  }
+  function selectMission(id){
+    activeMission=MISSIONS.find(m=>m.id===id)||null;
+    document.querySelectorAll('.mcard').forEach(c=>c.classList.toggle('on',c.dataset.id===id));
+    renderBriefing(); $("missionResult").classList.remove('show');
+  }
+  function renderBriefing(){
+    const box=$("briefing"); if(!box) return;
+    if(!missionMode||!activeMission){ box.style.display='none'; return; }
+    box.style.display=''; const m=activeMission, got=missionStars[m.id]||0;
+    box.innerHTML='<div class="bfhead"><span class="bficon">'+m.icon+'</span><div>'
+      +'<div class="bfname">'+m.name+' <span class="bfstars">'+starHTML(got)+'</span></div>'
+      +'<div class="bfwho">'+m.who+'</div></div></div>'
+      +'<p class="bfbrief">'+m.brief+'</p>'
+      +(m.twist?'<div class="bftwist">⚠ '+m.twist.label+'</div>':'')
+      +'<div class="bfgoals">'+m.goals.map((g,i)=>'<div class="bfg"><span class="bfgn">'+'★'.repeat(i+1)+'</span>'+g.label+'</div>').join('')+'</div>'
+      +'<div class="bfhint">Set the dam policy below (or pick a preset), then press <b>▶ Run 30 years</b>.</div>';
+  }
+  function setMode(mission){
+    missionMode=mission;
+    $("mMissions").classList.toggle('on',mission); $("mSandbox").classList.toggle('on',!mission);
+    $("missionWrap").style.display=mission?'':'none';
+    if(mission){ if(!activeMission) selectMission(MISSIONS[0].id); else renderBriefing(); }
+    else { $("missionResult").classList.remove('show'); }
+  }
+  function hintFor(m,f,sc){
+    if(m.id==='power') return f.powerTWh<16?'Raise the winter-release share on both dams — that is when the turbines earn the most.':'Ease off downstream irrigation so more water reaches the sea and the level holds.';
+    if(m.id==='cotton') return f.cropPct<80?'Raise downstream irrigation on both rivers.':'Hold a little more water back for the sea — drop irrigation slightly so the level stays above 31 m.';
+    if(m.id==='aral') return 'Divert less to the fields on both rivers and let more flow through to the terminus.';
+    if(m.id==='peace'){ let lo='KGZ',lv=2; for(const k in f.countries){ if(f.countries[k]<lv){ lv=f.countries[k]; lo=k; } }
+      return 'Your unhappiest partner is '+CNAME[lo]+' ('+Math.round(lv*100)+'%). Upstream wants winter power; downstream wants summer irrigation; Kazakhstan wants the Aral level held up.'; }
+    if(m.id==='drought') return 'Water is scarce — you cannot satisfy everyone. Protect the sea floor and share the crops as evenly as you can.';
+    const arr=[['power',sc.power],['crops',sc.crop],['the sea',sc.sea],['fairness',sc.fairness]].sort((a,b)=>a[1]-b[1]);
+    return 'Your weakest area is '+arr[0][0]+'. Lift it without breaking the rest.';
+  }
+  function renderMissionResult(){
+    const res=$("missionResult"); if(!res) return;
+    if(!missionMode||!activeMission||!RESULTS.length){ res.classList.remove('show'); return; }
+    const m=activeMission, f=RESULTS[RESULTS.length-1], sc=scoreRun(), n=starsFor(m,f,sc), prev=missionStars[m.id]||0;
+    if(n>prev){ missionStars[m.id]=n; try{ localStorage.setItem('upstream_river_stars',JSON.stringify(missionStars)); }catch(e){} }
+    buildRail(); renderBriefing();
+    const rows=m.goals.map((g,i)=>{ const ok=g.test(f,sc);
+      return '<div class="grow '+(ok?'ok':'no')+'"><span class="gk">'+(ok?'✓':'✗')+'</span><span>'+'★'.repeat(i+1)+' '+g.label+'</span></div>'; }).join('');
+    const headline = n===3?'Perfect run — three stars':(n>0?n+' of 3 stars':'No stars yet — try again');
+    const coach = n<3 ? '<div class="coach"><b>Next ('+'★'.repeat(n+1)+'):</b> '+m.goals[n].label+'. '+hintFor(m,f,sc)+'</div>'
+                      : '<div class="coach">You’ve maxed this one. Try another mission, or switch to Free play.</div>';
+    res.innerHTML='<div class="mrhead"><div class="mrstars">'+starHTML(n)+'</div>'
+      +'<div class="mrtitle">'+headline+(n>prev?' · new best!':'')+'</div></div>'
+      +'<div class="grows">'+rows+'</div>'+coach
+      +'<div class="mrbtns"><button class="ghost" id="chalBtn">🔗 Challenge a friend</button>'
+      +'<button class="ghost" id="nextMbtn">Next mission →</button></div>';
+    res.classList.add('show');
+    $("chalBtn").onclick=copyChallenge;
+    $("nextMbtn").onclick=()=>{ const i=MISSIONS.findIndex(x=>x.id===m.id); selectMission(MISSIONS[(i+1)%MISSIONS.length].id); window.scrollTo({top:0,behavior:'smooth'}); };
+  }
+  function archetype(sc){
+    if(sc.power>=0.55&&sc.crop>=0.55&&sc.sea>=0.55&&sc.fairness>=0.55) return ['The Master Diplomat','you kept power, food, the sea, and the peace — almost nobody threads all four.'];
+    if(sc.sea<0.20) return ['The Sea’s Undertaker','you spent the Aral for the fields, the way the Soviet planners did.'];
+    const top=[['power',sc.power],['crop',sc.crop],['sea',sc.sea],['fairness',sc.fairness]].sort((a,b)=>b[1]-a[1])[0][0];
+    const map={power:['The Upstream Dealmaker','you sided with the mountains — the turbines never stopped.'],
+      crop:['The Cotton Broker','you sided with the fields — the harvest came in full.'],
+      sea:['The Aral’s Keeper','you put the sea first, and it held on.'],
+      fairness:['The Peacemaker','no one got everything, and no one was ruined.']};
+    return map[top];
+  }
+  function renderArchetype(){
+    if(!RESULTS.length) return;
+    const a=archetype(scoreRun()), box=$("arche");
+    box.innerHTML='<span class="arlab">You governed as</span> <b>'+a[0]+'</b> — '+a[1];
+    box.style.display='';
+  }
+  function renderDebrief(){
+    const facts=[
+     ['🌊','The Aral was the world’s fourth-largest lake. Since 1960 it has lost about 90% of its water — the collapse you can trigger here is the real one.'],
+     ['🤝','It was never one country’s decision. Five republics share these two rivers with no one in charge — the exact five-way squeeze this game is built on.'],
+     ['🚜','No drought did the original damage. Soviet planners diverted the Amu and Syr to grow cotton in the desert; the sea was, in effect, spent on the harvest.'],
+     ['🛟','In 2005 Kazakhstan dammed the strait and brought the small North Aral back — proof the system can be steered, if the water is shared differently.'],
+    ];
+    $("debriefBody").innerHTML=facts.map(x=>'<div class="dfact"><span class="dico">'+x[0]+'</span><p>'+x[1]+'</p></div>').join('')
+     +'<div class="dsrc">Sources: published Aral Sea Basin figures (river flows, reservoir capacities, Aral level/area/volume 1960–2010) — the same data behind the gold markers on the sea chart.</div>';
+  }
+  function encodePolicy(){ const p=readPolicy(); return [p.syr.rel,p.syr.win,p.syr.irr,p.amu.rel,p.amu.win,p.amu.irr,p.climate].join('-'); }
+  function copyChallenge(){
+    const q=new URLSearchParams();
+    if(missionMode&&activeMission) q.set('m',activeMission.id);
+    q.set('p',encodePolicy());
+    const url=location.origin+location.pathname+'?'+q.toString();
+    const done=()=>{ const t=$("chalBtn"); if(t){ const o=t.textContent; t.textContent='✓ Link copied'; setTimeout(()=>{t.textContent=o;},1600); } };
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(done,()=>window.prompt('Copy this link:',url)); }
+    else window.prompt('Copy this link:',url);
+  }
+  function applySharedPolicy(pp){
+    const a=pp.split('-'); if(a.length<7) return false;
+    sliders.syrRel.value=a[0];sliders.syrWin.value=a[1];sliders.syrIrr.value=a[2];
+    sliders.amuRel.value=a[3];sliders.amuWin.value=a[4];sliders.amuIrr.value=a[5];sliders.clim.value=a[6];
+    syncSliderLabels(); activePreset=null; document.querySelectorAll('.preset').forEach(b=>b.classList.remove('active'));
+    return true;
+  }
+  function initMissions(){
+    renderDebrief(); buildRail();
+    $("mMissions").addEventListener('click',()=>setMode(true));
+    $("mSandbox").addEventListener('click',()=>setMode(false));
+    const q=new URLSearchParams(location.search), mm=q.get('m');
+    if(mm&&MISSIONS.some(x=>x.id===mm)){ setMode(true); selectMission(mm); }
+    else { setMode(true); }
+  }
+
+  // ---------------------------------------------------------------------------
   // WIRING
   // ---------------------------------------------------------------------------
   function init(){
@@ -940,8 +1191,11 @@
     document.querySelectorAll(".preset").forEach(b=>b.addEventListener("click",()=>runPreset(b.dataset.preset)));
     window.addEventListener("resize",()=>{ if(RESULTS.length) drawCharts(+$("scrub").value); });
     $("stamp").textContent = new Date().getFullYear();
-    // first paint: the balanced preset
-    runPreset("balanced");
+    initMissions();
+    // first paint: honor a shared ?p policy link, else the balanced preset
+    const q=new URLSearchParams(location.search), pp=q.get("p");
+    if(pp && applySharedPolicy(pp)){ booting=false; runFromSliders(); }
+    else { runPreset("balanced"); booting=false; }
   }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init); else init();
 })();
