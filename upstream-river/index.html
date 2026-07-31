@@ -1,0 +1,950 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Upstream — The Central Asian River System</title>
+<meta name="description" content="Operate the dams of the Amu Darya and Syr Darya. Route the water. Balance electricity, crops, and the Aral Sea across five countries." />
+<style>
+  :root{
+    --bg:#0b1220;
+    --bg2:#0e1729;
+    --panel:rgba(18,28,48,.72);
+    --panel-solid:#121c30;
+    --line:rgba(126,160,214,.16);
+    --line-strong:rgba(126,160,214,.30);
+    --ink:#eaf1fb;
+    --ink-dim:#9fb2ce;
+    --ink-faint:#6f83a3;
+    --water:#38b6ff;
+    --water-deep:#1f7fd6;
+    --power:#ffd24a;
+    --crop:#5fd08a;
+    --sea:#37c0d6;
+    --danger:#ff6b6b;
+    --warn:#ffab5e;
+    --accent:#7aa2ff;
+    --shadow:0 18px 50px -20px rgba(0,0,0,.7);
+    --r:18px;
+    font-synthesis-weight:none;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 700px at 78% -10%, rgba(56,182,255,.10), transparent 60%),
+      radial-gradient(900px 600px at 8% 110%, rgba(95,208,138,.08), transparent 55%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+    min-height:100vh;
+  }
+  .wrap{max-width:1240px;margin:0 auto;padding:26px 20px 90px}
+
+  /* ---------- header ---------- */
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:22px}
+  .brand{display:flex;flex-direction:column;gap:6px}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);font-weight:600}
+  .kicker .dot{width:7px;height:7px;border-radius:50%;background:var(--water);box-shadow:0 0 12px var(--water)}
+  h1{
+    margin:0;font-size:clamp(30px,5vw,46px);font-weight:800;letter-spacing:-.02em;line-height:1;
+    background:linear-gradient(92deg,#eaf1fb 10%,#9cc7ff 55%,#7be0c0 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .tag{color:var(--ink-dim);font-size:15px;max-width:46ch}
+  .headmeta{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .chip{font-size:12px;color:var(--ink-dim);border:1px solid var(--line);background:var(--panel);padding:7px 12px;border-radius:999px;backdrop-filter:blur(6px)}
+  .chip b{color:var(--ink)}
+
+  /* ---------- layout ---------- */
+  .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+  @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(10px);box-shadow:var(--shadow)}
+  .panel .hd{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .panel .hd h2{margin:0;font-size:13px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-dim);font-weight:700}
+  .panel .bd{padding:16px 18px}
+
+  /* ---------- map ---------- */
+  #mapPanel .bd{padding:0}
+  .mapwrap{position:relative}
+  svg.map{display:block;width:100%;height:auto}
+  .maplegend{position:absolute;left:14px;bottom:12px;display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--ink-dim)}
+  .maplegend span{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:10px;height:10px;border-radius:3px;display:inline-block}
+  .yearbadge{position:absolute;right:14px;bottom:14px;font-size:13px;font-weight:700;color:var(--ink);background:rgba(8,14,26,.72);border:1px solid var(--line-strong);border-radius:10px;padding:6px 11px;letter-spacing:.02em;backdrop-filter:blur(4px)}
+
+  /* ---------- controls ---------- */
+  .rivergroup{border:1px solid var(--line);border-radius:14px;padding:14px 14px 6px;margin-bottom:14px;background:rgba(10,17,31,.4)}
+  .rivergroup.syr{border-left:3px solid var(--water)}
+  .rivergroup.amu{border-left:3px solid #6fd3a0}
+  .rivergroup h3{margin:0 0 2px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .rivergroup .sub{font-size:12px;color:var(--ink-faint);margin-bottom:12px}
+  .ctrl{margin-bottom:13px}
+  .ctrl .lab{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:5px}
+  .ctrl .lab .name{color:var(--ink)}
+  .ctrl .lab .val{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)}
+  .ctrl .hint{font-size:11px;color:var(--ink-faint);margin-top:4px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;background:linear-gradient(90deg,var(--water-deep),var(--water));outline:none;cursor:pointer}
+  .amu input[type=range]{background:linear-gradient(90deg,#2f9c6e,#6fd3a0)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--water-deep);box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer;margin-top:0}
+  .amu input[type=range]::-webkit-slider-thumb{border-color:#2f9c6e}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--water-deep);cursor:pointer}
+  .global-ctrl{border-top:1px dashed var(--line);padding-top:12px;margin-top:4px}
+
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+  button{font-family:inherit;font-size:14px;font-weight:600;border-radius:11px;border:1px solid var(--line-strong);background:var(--panel-solid);color:var(--ink);padding:11px 16px;cursor:pointer;transition:transform .06s ease,background .15s,border-color .15s}
+  button:hover{border-color:var(--accent);transform:translateY(-1px)}
+  button:active{transform:translateY(0)}
+  button.primary{background:linear-gradient(92deg,#2f7fe0,#38b6ff);border-color:transparent;color:#04121f;font-weight:800;box-shadow:0 10px 26px -12px rgba(56,182,255,.8)}
+  button.ghost{background:transparent}
+  .presetrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .preset{font-size:12px;font-weight:600;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(10,17,31,.5);color:var(--ink-dim);cursor:pointer}
+  .preset:hover{color:var(--ink);border-color:var(--accent)}
+  .preset.active{background:var(--accent);color:#06122a;border-color:transparent}
+
+  /* ---------- outputs ---------- */
+  .outputs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px}
+  @media (max-width:620px){.outputs{grid-template-columns:1fr}}
+  .stat{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px}
+  .stat .k{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-faint);font-weight:600;display:flex;align-items:center;gap:7px}
+  .stat .v{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:6px;font-variant-numeric:tabular-nums;line-height:1}
+  .stat .u{font-size:13px;color:var(--ink-dim);font-weight:500;margin-left:4px}
+  .stat .d{font-size:12px;color:var(--ink-dim);margin-top:7px}
+  .stat .icon{width:9px;height:9px;border-radius:3px}
+  .stat.power .v{color:var(--power)} .stat.power .icon{background:var(--power)}
+  .stat.crop .v{color:var(--crop)} .stat.crop .icon{background:var(--crop)}
+  .stat.sea .v{color:var(--sea)} .stat.sea .icon{background:var(--sea)}
+  .bar{height:5px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:11px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:999px;transition:width .5s ease}
+
+  /* ---------- countries ---------- */
+  .countries{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  @media (max-width:620px){.countries{grid-template-columns:repeat(2,1fr)}}
+  .country{background:rgba(10,17,31,.5);border:1px solid var(--line);border-radius:13px;padding:12px 10px;text-align:center}
+  .country .flag{font-size:22px;line-height:1}
+  .country .nm{font-size:12px;color:var(--ink);font-weight:600;margin-top:5px}
+  .country .role{font-size:10px;color:var(--ink-faint);letter-spacing:.04em;text-transform:uppercase}
+  .country .face{font-size:20px;margin-top:6px}
+  .country .satbar{height:4px;border-radius:999px;background:rgba(255,255,255,.08);margin-top:8px;overflow:hidden}
+  .country .satbar > i{display:block;height:100%;border-radius:999px;transition:width .5s}
+
+  /* ---------- score ---------- */
+  .scorewrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+  .ring{position:relative;width:132px;height:132px;flex:0 0 auto}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .ctr .num{font-size:34px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .ring .ctr .of{font-size:11px;color:var(--ink-faint);letter-spacing:.1em}
+  .verdict{flex:1;min-width:200px}
+  .verdict .title{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-bottom:4px}
+  .verdict p{margin:0;color:var(--ink-dim);font-size:14px}
+
+  /* ---------- scrubber ---------- */
+  .scrub{display:flex;align-items:center;gap:14px;margin-top:6px}
+  .scrub button.play{width:44px;height:44px;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto}
+  .scrub input[type=range]{background:linear-gradient(90deg,var(--accent),#b9ccff)}
+  .scrub input[type=range]::-webkit-slider-thumb{border-color:var(--accent)}
+  .scrub .yr{font-variant-numeric:tabular-nums;font-weight:700;min-width:44px;text-align:center}
+
+  /* ---------- charts ---------- */
+  .charts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:760px){.charts{grid-template-columns:1fr}}
+  .chartcard{background:rgba(10,17,31,.45);border:1px solid var(--line);border-radius:14px;padding:12px 12px 8px}
+  .chartcard .ct{font-size:12px;font-weight:700;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .chartcard .ct .now{font-variant-numeric:tabular-nums;color:var(--ink)}
+  canvas{display:block;width:100%;height:auto}
+
+  /* ---------- explainer ---------- */
+  details.explain{margin-top:20px;border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden}
+  details.explain summary{cursor:pointer;list-style:none;padding:15px 18px;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+  details.explain summary::-webkit-details-marker{display:none}
+  details.explain summary .arw{color:var(--ink-faint);transition:transform .2s}
+  details.explain[open] summary .arw{transform:rotate(90deg)}
+  .explain .body{padding:0 18px 18px;color:var(--ink-dim);font-size:14px}
+  .explain .eq{background:#0a1120;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:#cfe1ff;overflow-x:auto}
+  .explain .eq b{color:var(--power)}
+  .explain h4{color:var(--ink);margin:16px 0 4px;font-size:14px}
+
+  .note{margin-top:14px;font-size:12px;color:var(--ink-faint);line-height:1.6}
+  .note a{color:var(--accent)}
+  footer{margin-top:28px;text-align:center;color:var(--ink-faint);font-size:12px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <span class="kicker"><span class="dot"></span>A Central Asian water simulator</span>
+      <h1>Upstream</h1>
+      <div class="tag">You run the dams of the two great rivers. Every month you decide how much water to hold and how much to release. Downstream, five countries fight over the same drops, and the Aral Sea keeps score.</div>
+    </div>
+    <div class="headmeta">
+      <span class="chip">Region: <b>Aral Sea Basin</b></span>
+      <span class="chip">Rivers: <b>Amu Darya · Syr Darya</b></span>
+      <span class="chip">Model: <b>physics + hydrology</b></span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- ============ MAP ============ -->
+    <section class="panel" id="mapPanel">
+      <div class="hd"><h2>The Basin</h2><span style="font-size:12px;color:var(--ink-faint)">source → dam → fields → sea</span></div>
+      <div class="bd">
+        <div class="mapwrap">
+          <div class="yearbadge" id="yearBadge">Year 1 of 30</div>
+          <svg class="map" viewBox="0 0 600 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Schematic of the Aral Sea basin">
+            <defs>
+              <linearGradient id="gWater" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#5cc6ff"/><stop offset="1" stop-color="#2079cf"/>
+              </linearGradient>
+              <linearGradient id="gMountain" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#33415c"/><stop offset="1" stop-color="#1a2438"/>
+              </linearGradient>
+              <radialGradient id="gGlow" cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0" stop-color="#38b6ff" stop-opacity=".28"/><stop offset="1" stop-color="#38b6ff" stop-opacity="0"/>
+              </radialGradient>
+              <filter id="soft"><feGaussianBlur stdDeviation="2.2"/></filter>
+            </defs>
+
+            <!-- backdrop -->
+            <rect x="0" y="0" width="600" height="520" fill="none"/>
+
+            <!-- mountains (sources) -->
+            <g opacity=".95">
+              <path d="M60 96 L120 34 L176 96 Z" fill="url(#gMountain)"/>
+              <path d="M120 96 L178 44 L232 96 Z" fill="url(#gMountain)"/>
+              <path d="M104 96 L120 34 L132 96 Z" fill="#e8f2ff" opacity=".55"/>
+              <path d="M168 96 L178 44 L188 96 Z" fill="#e8f2ff" opacity=".5"/>
+              <text x="146" y="26" fill="#9fb2ce" font-size="11" text-anchor="middle">Tien Shan</text>
+
+              <path d="M392 96 L452 30 L512 96 Z" fill="url(#gMountain)"/>
+              <path d="M340 96 L398 48 L452 96 Z" fill="url(#gMountain)"/>
+              <path d="M444 96 L452 30 L462 96 Z" fill="#e8f2ff" opacity=".55"/>
+              <text x="452" y="22" fill="#9fb2ce" font-size="11" text-anchor="middle">Pamirs</text>
+            </g>
+
+            <!-- ===== SYR DARYA (left, to North Aral) ===== -->
+            <path id="syrPath" d="M150 96 C150 150 118 172 120 214 C122 262 92 300 96 344 C100 386 120 404 150 430"
+                  fill="none" stroke="#12233c" stroke-width="15" stroke-linecap="round"/>
+            <path id="syrFlow" d="M150 96 C150 150 118 172 120 214 C122 262 92 300 96 344 C100 386 120 404 150 430"
+                  fill="none" stroke="url(#gWater)" stroke-width="9" stroke-linecap="round" stroke-dasharray="10 14" opacity=".9"/>
+            <!-- Toktogul dam node -->
+            <g id="syrDam">
+              <rect x="98" y="176" width="44" height="26" rx="5" fill="#101a2c" stroke="var(--power)" stroke-width="1.5"/>
+              <rect id="syrStore" x="101" y="188" width="38" height="11" rx="2" fill="url(#gWater)"/>
+              <text x="120" y="170" fill="#ffd88a" font-size="10.5" text-anchor="middle" font-weight="600">Toktogul</text>
+            </g>
+            <!-- Syr irrigation fields -->
+            <g id="syrFields">
+              <rect x="40" y="290" width="46" height="30" rx="4" fill="#294b32"/>
+              <rect x="40" y="290" width="46" height="30" rx="4" fill="#5fd08a" id="syrFieldFill" opacity=".8"/>
+              <text x="63" y="335" fill="#9fb2ce" font-size="9.5" text-anchor="middle">Fergana · Kyzylorda</text>
+            </g>
+
+            <!-- ===== AMU DARYA (right, to South Aral) ===== -->
+            <path id="amuPath" d="M452 96 C452 150 486 176 484 220 C482 270 448 300 372 336 C320 360 288 388 250 430"
+                  fill="none" stroke="#12233c" stroke-width="15" stroke-linecap="round"/>
+            <path id="amuFlow" d="M452 96 C452 150 486 176 484 220 C482 270 448 300 372 336 C320 360 288 388 250 430"
+                  fill="none" stroke="url(#gWater)" stroke-width="9" stroke-linecap="round" stroke-dasharray="10 14" opacity=".9"/>
+            <!-- Nurek dam node -->
+            <g id="amuDam">
+              <rect x="462" y="184" width="44" height="26" rx="5" fill="#101a2c" stroke="var(--power)" stroke-width="1.5"/>
+              <rect id="amuStore" x="465" y="196" width="38" height="11" rx="2" fill="url(#gWater)"/>
+              <text x="484" y="178" fill="#ffd88a" font-size="10.5" text-anchor="middle" font-weight="600">Nurek</text>
+            </g>
+            <!-- Amu irrigation fields (Karakum) -->
+            <g id="amuFields">
+              <rect x="392" y="316" width="52" height="32" rx="4" fill="#294b32"/>
+              <rect x="392" y="316" width="52" height="32" rx="4" fill="#5fd08a" id="amuFieldFill" opacity=".8"/>
+              <text x="418" y="362" fill="#9fb2ce" font-size="9.5" text-anchor="middle">Karakum · Khorezm</text>
+            </g>
+
+            <!-- ===== ARAL SEA (bottom) ===== -->
+            <ellipse id="seaGlow" cx="196" cy="470" rx="150" ry="60" fill="url(#gGlow)"/>
+            <!-- ghost 1960 shoreline -->
+            <path d="M120 452 C150 430 210 428 250 440 C300 454 320 486 296 502 C260 520 150 520 122 500 C104 486 104 466 120 452 Z"
+                  fill="none" stroke="#3b5170" stroke-width="1.4" stroke-dasharray="4 5" opacity=".7"/>
+            <!-- exposed seabed -->
+            <path id="seabed" d="M120 452 C150 430 210 428 250 440 C300 454 320 486 296 502 C260 520 150 520 122 500 C104 486 104 466 120 452 Z"
+                  fill="#7a6a4e" opacity=".22"/>
+            <!-- North Aral water -->
+            <ellipse id="northAral" cx="150" cy="452" rx="30" ry="15" fill="url(#gWater)"/>
+            <!-- South Aral water -->
+            <ellipse id="southAral" cx="220" cy="478" rx="70" ry="30" fill="url(#gWater)"/>
+            <text x="196" y="516" fill="#9fb2ce" font-size="10.5" text-anchor="middle">Aral Sea</text>
+          </svg>
+
+          <div class="maplegend">
+            <span><i class="swatch" style="background:linear-gradient(#5cc6ff,#2079cf)"></i>water</span>
+            <span><i class="swatch" style="background:var(--crop)"></i>irrigated fields</span>
+            <span><i class="swatch" style="background:var(--power);"></i>dam / power</span>
+            <span><i class="swatch" style="background:#7a6a4e"></i>dry seabed</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTROLS ============ -->
+    <section class="panel">
+      <div class="hd"><h2>Your Policy</h2><span style="font-size:12px;color:var(--ink-faint)">then run 30 years</span></div>
+      <div class="bd">
+        <div class="presetrow" id="presetRow">
+          <button class="preset" data-preset="balanced">Balanced steward</button>
+          <button class="preset" data-preset="power">Winter power</button>
+          <button class="preset" data-preset="cotton">Cotton machine</button>
+          <button class="preset" data-preset="history">Replay 1960→2010</button>
+        </div>
+
+        <!-- SYR DARYA -->
+        <div class="rivergroup syr">
+          <h3>Syr Darya <span style="font-size:11px;color:var(--ink-faint);font-weight:500">→ North Aral</span></h3>
+          <div class="sub">Natural flow ~37 km³/yr · Toktogul reservoir (Kyrgyzstan)</div>
+
+          <div class="ctrl">
+            <div class="lab"><span class="name">Reservoir release</span><span class="val"><span id="syrRelV">100</span>%</span></div>
+            <input type="range" id="syrRel" min="40" max="140" value="100" step="1" />
+            <div class="hint">% of natural inflow let out of the dam. Under 100% banks water for later; over 100% draws the reservoir down.</div>
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">Winter release (power)</span><span class="val"><span id="syrWinV">35</span>%</span></div>
+            <input type="range" id="syrWin" min="10" max="85" value="35" step="1" />
+            <div class="hint">High winter share = electricity for Kyrgyzstan, but the water arrives when fields are frozen, not in the growing season.</div>
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">Downstream irrigation</span><span class="val"><span id="syrIrrV">60</span>%</span></div>
+            <input type="range" id="syrIrr" min="0" max="100" value="60" step="1" />
+            <div class="hint">How hard Kazakhstan/Uzbek farms divert the summer water. More crops, less reaches the sea.</div>
+          </div>
+        </div>
+
+        <!-- AMU DARYA -->
+        <div class="rivergroup amu">
+          <h3>Amu Darya <span style="font-size:11px;color:var(--ink-faint);font-weight:500">→ South Aral</span></h3>
+          <div class="sub">Natural flow ~79 km³/yr · Nurek reservoir (Tajikistan)</div>
+
+          <div class="ctrl">
+            <div class="lab"><span class="name">Reservoir release</span><span class="val"><span id="amuRelV">100</span>%</span></div>
+            <input type="range" id="amuRel" min="40" max="140" value="100" step="1" />
+            <div class="hint">Nurek is the tallest dam on Earth — big head, big power per drop.</div>
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">Winter release (power)</span><span class="val"><span id="amuWinV">35</span>%</span></div>
+            <input type="range" id="amuWin" min="10" max="85" value="35" step="1" />
+          </div>
+          <div class="ctrl">
+            <div class="lab"><span class="name">Downstream irrigation</span><span class="val"><span id="amuIrrV">70</span>%</span></div>
+            <input type="range" id="amuIrr" min="0" max="100" value="70" step="1" />
+            <div class="hint">The Karakum Canal loses ~half its water to the desert before it reaches a field. That loss is in the model.</div>
+          </div>
+        </div>
+
+        <!-- GLOBAL -->
+        <div class="global-ctrl">
+          <div class="ctrl">
+            <div class="lab"><span class="name">Climate — drought ↔ wet decades</span><span class="val"><span id="climV">Normal</span></span></div>
+            <input type="range" id="clim" min="-30" max="20" value="0" step="1" style="background:linear-gradient(90deg,#e0894a,#38b6ff)"/>
+            <div class="hint">Shifts the snowmelt feeding both rivers, and how fast the sea evaporates.</div>
+          </div>
+          <div class="btnrow">
+            <button class="primary" id="runBtn">▶ Run 30 years</button>
+            <button class="ghost" id="csvBtn">Export data (CSV)</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ OUTPUTS ============ -->
+  <div class="outputs">
+    <div class="stat power">
+      <div class="k"><span class="icon"></span>Electricity — upstream</div>
+      <div class="v"><span id="oPower">—</span><span class="u">TWh/yr</span></div>
+      <div class="d" id="oPowerD">winter hydropower from the dams</div>
+      <div class="bar"><i id="oPowerBar" style="width:0;background:var(--power)"></i></div>
+    </div>
+    <div class="stat crop">
+      <div class="k"><span class="icon"></span>Crop yield — downstream</div>
+      <div class="v"><span id="oCrop">—</span><span class="u">% of demand</span></div>
+      <div class="d" id="oCropD">summer water delivered to the fields</div>
+      <div class="bar"><i id="oCropBar" style="width:0;background:var(--crop)"></i></div>
+    </div>
+    <div class="stat sea">
+      <div class="k"><span class="icon"></span>Aral Sea — the terminus</div>
+      <div class="v"><span id="oSea">—</span><span class="u">m level</span></div>
+      <div class="d" id="oSeaD">what's left after everyone drinks</div>
+      <div class="bar"><i id="oSeaBar" style="width:0;background:var(--sea)"></i></div>
+    </div>
+  </div>
+
+  <!-- ============ COUNTRIES ============ -->
+  <section class="panel" style="margin-top:18px">
+    <div class="hd"><h2>Five countries, one river</h2><span style="font-size:12px;color:var(--ink-faint)">upstream wants power · downstream wants water</span></div>
+    <div class="bd">
+      <div class="countries" id="countries"></div>
+      <div class="note">Upstream states (Kyrgyzstan, Tajikistan) sit on the reservoirs and want winter releases for electricity. Downstream states (Kazakhstan, Uzbekistan, Turkmenistan) want that same water held back for the summer growing season. That single clash is the real politics of Central Asian water. A good operator keeps everyone tolerably unhappy, not one country delighted and the rest ruined.</div>
+    </div>
+  </section>
+
+  <!-- ============ SCORE + SCRUBBER ============ -->
+  <div class="grid" style="margin-top:18px">
+    <section class="panel">
+      <div class="hd"><h2>Your verdict</h2></div>
+      <div class="bd">
+        <div class="scorewrap">
+          <div class="ring">
+            <svg width="132" height="132" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="56" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="12"/>
+              <circle id="ringArc" cx="66" cy="66" r="56" fill="none" stroke="#38b6ff" stroke-width="12" stroke-linecap="round"
+                      stroke-dasharray="351.8" stroke-dashoffset="351.8"/>
+            </svg>
+            <div class="ctr"><div class="num" id="scoreNum">—</div><div class="of">/ 100</div></div>
+          </div>
+          <div class="verdict">
+            <div class="title" id="verdictTitle">Set a policy and run</div>
+            <p id="verdictText">Choose how you release water from each dam, how hard the farms divert, and what the climate does. Then run three decades and see who wins and who dries out.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="hd"><h2>Replay the run</h2></div>
+      <div class="bd">
+        <div class="scrub">
+          <button class="play" id="playBtn" aria-label="play">▶</button>
+          <input type="range" id="scrub" min="0" max="29" value="29" step="1" />
+          <span class="yr" id="scrubYr">Yr 30</span>
+        </div>
+        <div class="note" id="scrubNote">Scrub through the 30 years. The map, the numbers, and the countries all rewind with you.</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ CHARTS ============ -->
+  <section class="panel" style="margin-top:18px">
+    <div class="hd"><h2>Thirty years, three outcomes</h2><span style="font-size:12px;color:var(--ink-faint)">gold dots = measured real-history values</span></div>
+    <div class="bd">
+      <div class="charts">
+        <div class="chartcard">
+          <div class="ct"><span style="color:var(--power)">⚡ Electricity (TWh)</span><span class="now" id="c1now"></span></div>
+          <canvas id="c1" width="360" height="150"></canvas>
+        </div>
+        <div class="chartcard">
+          <div class="ct"><span style="color:var(--crop)">🌾 Crop yield (%)</span><span class="now" id="c2now"></span></div>
+          <canvas id="c2" width="360" height="150"></canvas>
+        </div>
+        <div class="chartcard">
+          <div class="ct"><span style="color:var(--sea)">🌊 Aral level (m)</span><span class="now" id="c3now"></span></div>
+          <canvas id="c3" width="360" height="150"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EXPLAINER ============ -->
+  <details class="explain">
+    <summary>The two equations behind the machine <span class="arw">›</span></summary>
+    <div class="body">
+      <p>Everything you see is driven by two pieces of real physics and chemistry. This is a teaching model built on published-order numbers, not a validated forecast — but the tradeoff structure is real.</p>
+
+      <h4>1 · Hydropower (physics)</h4>
+      <div class="eq">E = ρ · g · h · η · <b>V</b></div>
+      <p>Energy from released water: density <b>ρ</b> (1000 kg/m³) × gravity <b>g</b> (9.81 m/s²) × dam head <b>h</b> (Toktogul ≈ 215 m, Nurek ≈ 275 m) × efficiency <b>η</b> × released volume <b>V</b>. Nurek is the tallest dam on Earth, so each cubic metre falls further and makes more electricity. Releasing in <em>winter</em> gives upstream countries the power they need to survive the cold, but that water then misses the summer fields downstream.</p>
+
+      <h4>2 · The reservoir balance (storage)</h4>
+      <div class="eq">S(t+1) = clamp( S(t) + inflow − release , 0 , capacity )</div>
+      <p>A dam is a bank account for water. Hold some back this year (release under 100%) and you can survive a drought later — but if the reservoir overfills, it spills anyway. This is why Toktogul, a multi-year reservoir, is the single most fought-over object in the region.</p>
+
+      <h4>3 · The Aral Sea (chemistry of a closed basin)</h4>
+      <div class="eq">V(t+1) = V(t) + inflow_to_sea − evaporation( area )</div>
+      <p>The Aral has no outlet. Water only leaves by evaporating off its surface. When irrigation upstream steals the inflow, evaporation keeps removing water that nothing replaces, so the sea shrinks — and because the salt stays behind, what's left turns from a fishery into a brine. Between 1960 and 2010 the sea lost about 90% of its water. This model reproduces that when you run the <em>Cotton machine</em> preset.</p>
+
+      <p class="note" style="margin-top:14px">Sources for the real-history markers and parameters: published Aral Sea Basin figures (river flows, reservoir capacities, Aral area/level/volume 1960–2010). Numbers are realistic-order for teaching, not an operational prediction.</p>
+    </div>
+  </details>
+
+  <footer>
+    Upstream · a Central Asian water simulator · built as a tech-project MVP for review · <span id="stamp"></span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+(function(){
+  // ---------------------------------------------------------------------------
+  // MODEL CONSTANTS  (published-order, teaching model)
+  // ---------------------------------------------------------------------------
+  const RIVERS = {
+    syr: { flow: 37,  cap: 19.5, head: 215, irrDemand: 33, convLoss: 0.18, powerNeed: 3.0 },
+    amu: { flow: 79,  cap: 10.5, head: 275, irrDemand: 60, convLoss: 0.42, powerNeed: 5.0 }
+  };
+  const RHOG = 9810;            // ρ·g
+  const GEN  = 0.20;            // real generation factor (plant + cascade losses); tuned so a normal run ~15 TWh (real Toktogul+Nurek order)
+  const KM3_M3 = 1e9;
+  const J_TO_TWH = 3.6e15;      // 1 TWh = 3.6e15 J
+  const YEARS = 30;
+  const BASE_YEAR = 1991;       // interactive runs are the post-Soviet era
+
+  // Aral hypsometry: piecewise table (volume km3 -> level m, area km2). Published-order.
+  const ARAL = {
+    vol:   [0,   40,   90,   150,  220,   310,   340,  500,  700,  1090],
+    level: [20,  25,   28,   31,   34,    38,    42,   48,   50,   53.4],
+    area:  [500, 8000, 15000,22000,28700, 36800, 40000,46000,55000,68000]
+  };
+  const ARAL_V0 = 1090, ARAL_VMAX = 1090;
+  const EVAP_BASE = 0.95;       // m/yr off the sea surface
+
+  function interp(x, xs, ys){
+    if(x<=xs[0]) return ys[0];
+    if(x>=xs[xs.length-1]) return ys[ys.length-1];
+    for(let i=0;i<xs.length-1;i++){
+      if(x>=xs[i] && x<=xs[i+1]){
+        const t=(x-xs[i])/(xs[i+1]-xs[i]);
+        return ys[i]+t*(ys[i+1]-ys[i]);
+      }
+    }
+    return ys[ys.length-1];
+  }
+  const seaLevel = v => interp(v, ARAL.vol, ARAL.level);
+  const seaArea  = v => interp(v, ARAL.vol, ARAL.area);
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const sat = x => 1 - Math.pow(1-clamp(x,0,1), 1.7); // diminishing-returns crop response
+
+  // ---------------------------------------------------------------------------
+  // CORE SIMULATION
+  //   policyFn(year0based) -> { syr:{rel,win,irr}, amu:{...}, climate }
+  //   returns array of yearly result objects
+  // ---------------------------------------------------------------------------
+  function simulate(policyFn){
+    const out = [];
+    let store = { syr: RIVERS.syr.cap*0.7, amu: RIVERS.amu.cap*0.7 };
+    let seaV = ARAL_V0;
+
+    for(let y=0; y<YEARS; y++){
+      const P = policyFn(y);
+      const climate = P.climate||0;                 // -30..+20 (%)
+      const flowMul = 1 + climate/100;
+      const evapMul = 1 - climate/220;              // hotter/drier decade -> more evap
+
+      let totPowerTWh = 0, seaInflow = 0;
+      const perRiver = {};
+
+      for(const key of ["syr","amu"]){
+        const R = RIVERS[key], pol = P[key];
+        const inflow = R.flow * flowMul;
+        // desired release as % of natural inflow, limited by what's physically available
+        let release = inflow * (pol.rel/100);
+        release = Math.min(release, store[key] + inflow);   // can't release what you don't have
+        // update storage, force spill if overfull
+        let newStore = store[key] + inflow - release;
+        if(newStore > R.cap){ release += (newStore - R.cap); newStore = R.cap; }
+        newStore = Math.max(0, newStore);
+        store[key] = newStore;
+
+        // seasonal split
+        const winShare = pol.win/100;
+        const winterRel = release * winShare;
+        const summerRel = release * (1-winShare);
+
+        // hydropower  E = ρ g h η V   (winter release is when power is worth most; small dry-season bonus)
+        const V_m3 = release * KM3_M3;
+        const E_J  = RHOG * R.head * GEN * V_m3;
+        const powerTWh = E_J / J_TO_TWH;
+        totPowerTWh += powerTWh;
+        // winter power adequacy for the upstream country
+        const winterPowerTWh = (winterRel*KM3_M3*RHOG*R.head*GEN)/J_TO_TWH;
+        const powerSat = clamp(winterPowerTWh / R.powerNeed, 0, 1);
+
+        // downstream: summer water reaches the fields after conveyance loss
+        const delivered = summerRel * (1-R.convLoss);
+        const withdrawTarget = R.irrDemand * (pol.irr/100);
+        const applied = Math.min(withdrawTarget, delivered);
+        const cropSat = sat(applied / R.irrDemand);
+        // whatever survives irrigation flows to the sea (summer remainder + winter flow, less winter losses)
+        const winterToSea = winterRel * (1-R.convLoss);
+        const toSea = Math.max(0, (delivered - applied) + winterToSea);
+        seaInflow += toSea;
+
+        perRiver[key] = { inflow, release, store:newStore, powerTWh, powerSat, cropSat,
+                          delivered, applied, toSea };
+      }
+
+      // Aral balance
+      const area = seaArea(seaV);
+      const evap = EVAP_BASE * evapMul * area / 1000;   // km3/yr  (area km2 * m /1000)
+      seaV = clamp(seaV + seaInflow - evap, 0, ARAL_VMAX);
+      const level = seaLevel(seaV), areaNow = seaArea(seaV);
+      // health tracks VOLUME, not level: the salt concentration (C = salt/V) and the
+      // ecosystem die as volume falls, and the hypsometry is nonlinear (31 m ≈ 75% gone).
+      const seaHealth = clamp(seaV/ARAL_V0, 0, 1);
+
+      // headline crop = demand-weighted mean of the two basins
+      const cropPct = 100 * (perRiver.syr.cropSat*RIVERS.syr.irrDemand + perRiver.amu.cropSat*RIVERS.amu.irrDemand)
+                          / (RIVERS.syr.irrDemand + RIVERS.amu.irrDemand);
+
+      // country satisfaction (0..1)
+      const c = {
+        KGZ: perRiver.syr.powerSat,                                        // Kyrgyzstan – Syr power
+        TJK: perRiver.amu.powerSat,                                        // Tajikistan – Amu power
+        KAZ: 0.55*perRiver.syr.cropSat + 0.45*seaHealth,                   // Kazakhstan – Syr crops + North Aral
+        UZB: 0.5*perRiver.syr.cropSat + 0.5*perRiver.amu.cropSat,          // Uzbekistan – both basins' crops
+        TKM: perRiver.amu.cropSat                                          // Turkmenistan – Amu crops (Karakum)
+      };
+
+      out.push({
+        year: BASE_YEAR + y,
+        powerTWh: totPowerTWh,
+        cropPct,
+        level, seaV, seaArea: areaNow, seaHealth,
+        northFrac: clamp((level-20)/33.4, 0, 1),
+        countries: c,
+        syrStore: perRiver.syr.store, amuStore: perRiver.amu.store,
+        syrCrop: perRiver.syr.cropSat, amuCrop: perRiver.amu.cropSat,
+        raw: perRiver
+      });
+    }
+    return out;
+  }
+
+  // ---------------------------------------------------------------------------
+  // PRESETS
+  // ---------------------------------------------------------------------------
+  const PRESETS = {
+    balanced: { label:"Balanced steward",
+      policy:()=>({ syr:{rel:90,win:45,irr:46}, amu:{rel:90,win:45,irr:48}, climate:0 }) },
+    power: { label:"Winter power",
+      policy:()=>({ syr:{rel:120,win:80,irr:40}, amu:{rel:120,win:80,irr:40}, climate:0 }) },
+    cotton: { label:"Cotton machine",
+      policy:()=>({ syr:{rel:130,win:20,irr:100}, amu:{rel:130,win:20,irr:100}, climate:-8 }) },
+    // real-history replay: irrigation ramps 1960->2010 as the Soviet cotton program grows
+    history: { label:"Replay 1960→2010", history:true,
+      policy:(y)=>{
+        const f = y/(YEARS-1);
+        const irr = 30 + 90*f;                 // Soviet cotton ramp: withdrawals climb hard, 1960→2010
+        return { syr:{rel:125,win:22,irr:irr}, amu:{rel:130,win:22,irr:irr+8}, climate: -13*f };
+      } }
+  };
+  // measured Aral level gold points for the history replay (year -> level m), mapped onto 30-step run
+  const GOLD = [ {t:0,lvl:53.4},{t:11,lvl:51.1},{t:16,lvl:48.3},{t:26,lvl:40.2},{t:29,lvl:31.0} ];
+
+  // ---------------------------------------------------------------------------
+  // STATE + DOM
+  // ---------------------------------------------------------------------------
+  let RESULTS = [];
+  let activePreset = null;
+  let playTimer = null;
+  const $ = id => document.getElementById(id);
+
+  const sliders = {
+    syrRel:$("syrRel"), syrWin:$("syrWin"), syrIrr:$("syrIrr"),
+    amuRel:$("amuRel"), amuWin:$("amuWin"), amuIrr:$("amuIrr"), clim:$("clim")
+  };
+  const climLabels = v => v<=-18?"Drought":v<=-6?"Dry":v<6?"Normal":v<14?"Wet":"Very wet";
+
+  function readPolicy(){
+    return {
+      syr:{ rel:+sliders.syrRel.value, win:+sliders.syrWin.value, irr:+sliders.syrIrr.value },
+      amu:{ rel:+sliders.amuRel.value, win:+sliders.amuWin.value, irr:+sliders.amuIrr.value },
+      climate:+sliders.clim.value
+    };
+  }
+  function syncSliderLabels(){
+    $("syrRelV").textContent=sliders.syrRel.value; $("syrWinV").textContent=sliders.syrWin.value; $("syrIrrV").textContent=sliders.syrIrr.value;
+    $("amuRelV").textContent=sliders.amuRel.value; $("amuWinV").textContent=sliders.amuWin.value; $("amuIrrV").textContent=sliders.amuIrr.value;
+    $("climV").textContent=climLabels(+sliders.clim.value);
+  }
+
+  // ---------- COUNTRIES ----------
+  const COUNTRY_META = [
+    {id:"KGZ", flag:"🇰🇬", nm:"Kyrgyzstan", role:"Upstream · power"},
+    {id:"TJK", flag:"🇹🇯", nm:"Tajikistan", role:"Upstream · power"},
+    {id:"UZB", flag:"🇺🇿", nm:"Uzbekistan", role:"Downstream · cotton"},
+    {id:"TKM", flag:"🇹🇲", nm:"Turkmenistan", role:"Downstream · Karakum"},
+    {id:"KAZ", flag:"🇰🇿", nm:"Kazakhstan", role:"Downstream · N. Aral"}
+  ];
+  function buildCountries(){
+    $("countries").innerHTML = COUNTRY_META.map(m=>`
+      <div class="country" data-c="${m.id}">
+        <div class="flag">${m.flag}</div>
+        <div class="nm">${m.nm}</div>
+        <div class="role">${m.role}</div>
+        <div class="face" id="face-${m.id}">·</div>
+        <div class="satbar"><i id="sat-${m.id}" style="width:0"></i></div>
+      </div>`).join("");
+  }
+  const faceFor = s => s>=.8?"😄":s>=.6?"🙂":s>=.4?"😐":s>=.2?"😟":"😡";
+  const satColor = s => s>=.6?"var(--crop)":s>=.35?"var(--warn)":"var(--danger)";
+
+  // ---------------------------------------------------------------------------
+  // RENDER a single year onto map / gauges / countries
+  // ---------------------------------------------------------------------------
+  function renderYear(i){
+    if(!RESULTS.length) return;
+    i = clamp(i,0,RESULTS.length-1);
+    const r = RESULTS[i];
+
+    // ---- map: reservoir fill ----
+    setStore("syrStore", r.syrStore/RIVERS.syr.cap, 101, 38);
+    setStore("amuStore", r.amuStore/RIVERS.amu.cap, 465, 38);
+    // ---- map: field greenness ----
+    setField("syrFieldFill", r.syrCrop);
+    setField("amuFieldFill", r.amuCrop);
+    // ---- map: flow opacity by release ----
+    $("syrFlow").style.opacity = 0.25 + 0.65*clamp(r.raw.syr.release/RIVERS.syr.flow/1.3,0,1);
+    $("amuFlow").style.opacity = 0.25 + 0.65*clamp(r.raw.amu.release/RIVERS.amu.flow/1.3,0,1);
+    // ---- map: the two seas ----
+    renderSea(r);
+    $("yearBadge").textContent = "Year "+(i+1)+" of "+YEARS+"  ·  "+r.year;
+
+    // ---- gauges ----
+    $("oPower").textContent = r.powerTWh.toFixed(1);
+    $("oCrop").textContent  = Math.round(r.cropPct);
+    $("oSea").textContent   = r.level.toFixed(1);
+    setBar("oPowerBar", r.powerTWh/25, "var(--power)");
+    setBar("oCropBar", r.cropPct/100, "var(--crop)");
+    setBar("oSeaBar", r.seaHealth, r.seaHealth>.40?"var(--sea)":r.seaHealth>.20?"var(--warn)":"var(--danger)");
+    $("oSeaD").textContent = r.level>=48?"a living sea":r.level>=38?"shrinking, still one body":r.level>=28?"split & turning to brine":"a salt desert with a few pools";
+
+    // ---- countries ----
+    for(const m of COUNTRY_META){
+      const s = clamp(r.countries[m.id],0,1);
+      $("face-"+m.id).textContent = faceFor(s);
+      const bar = $("sat-"+m.id); bar.style.width=(s*100).toFixed(0)+"%"; bar.style.background=satColor(s);
+    }
+
+    // ---- charts cursor ----
+    drawCharts(i);
+    $("c1now").textContent = r.powerTWh.toFixed(1)+" TWh";
+    $("c2now").textContent = Math.round(r.cropPct)+"%";
+    $("c3now").textContent = r.level.toFixed(1)+" m";
+  }
+
+  function setStore(id, frac, x, w){
+    frac = clamp(frac,0,1);
+    const full=11, h=full*frac;
+    const el=$(id); el.setAttribute("height",h.toFixed(1)); el.setAttribute("y",(199-h).toFixed(1)); el.setAttribute("x",x);
+    el.setAttribute("width",w);
+  }
+  function setField(id, crop){
+    const el=$(id); el.setAttribute("opacity",(0.12+0.8*clamp(crop,0,1)).toFixed(2));
+    el.setAttribute("fill", crop>.5?"#5fd08a":crop>.25?"#b8c25a":"#b98a4a");
+  }
+  function renderSea(r){
+    // North Aral (Syr terminus) — recovers with Syr delivery; South Aral (Amu) — the big body
+    const nFrac = clamp(r.raw.syr.toSea/8, 0.05, 1);            // north sensitive to Syr inflow
+    const sHealth = clamp(r.seaHealth,0,1);
+    const n=$("northAral"), s=$("southAral");
+    n.setAttribute("rx",(10+22*nFrac).toFixed(1)); n.setAttribute("ry",(6+10*nFrac).toFixed(1));
+    s.setAttribute("rx",(18+62*sHealth).toFixed(1)); s.setAttribute("ry",(9+26*sHealth).toFixed(1));
+    const col = sHealth>.40 ? "url(#gWater)" : sHealth>.20 ? "#6f9fb4" : "#9c8f63";
+    s.setAttribute("fill",col);
+    n.setAttribute("fill", nFrac>.35?"url(#gWater)":"#8fa9a2");
+    $("seabed").setAttribute("opacity",(0.35*(1-sHealth)).toFixed(2));
+    $("seaGlow").setAttribute("opacity",(0.5*sHealth+0.05).toFixed(2));
+  }
+  function setBar(id, frac, col){ const el=$(id); el.style.width=(clamp(frac,0,1)*100).toFixed(0)+"%"; el.style.background=col; }
+
+  // ---------------------------------------------------------------------------
+  // CHARTS  (canvas line charts)
+  // ---------------------------------------------------------------------------
+  function lineChart(canvas, series, opts){
+    const dpr = window.devicePixelRatio||1;
+    const cssW = canvas.clientWidth||360, cssH = 150;
+    canvas.width = cssW*dpr; canvas.height = cssH*dpr;
+    const ctx = canvas.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,cssW,cssH);
+    const padL=8,padR=8,padT=12,padB=14, w=cssW-padL-padR, h=cssH-padT-padB;
+    const n=series.length;
+    const min=opts.min, max=opts.max;
+    const X=i=> padL + (n<=1?0:i/(n-1))*w;
+    const Y=v=> padT + (1-(clamp(v,min,max)-min)/(max-min))*h;
+
+    // gridlines
+    ctx.strokeStyle="rgba(255,255,255,.06)"; ctx.lineWidth=1;
+    for(let g=0;g<=3;g++){ const yy=padT+g/3*h; ctx.beginPath(); ctx.moveTo(padL,yy); ctx.lineTo(padL+w,yy); ctx.stroke(); }
+
+    // area fill
+    const grad=ctx.createLinearGradient(0,padT,0,padT+h);
+    grad.addColorStop(0,opts.color+"55"); grad.addColorStop(1,opts.color+"03");
+    ctx.beginPath(); ctx.moveTo(X(0),Y(series[0]));
+    for(let i=1;i<n;i++) ctx.lineTo(X(i),Y(series[i]));
+    ctx.lineTo(X(n-1),padT+h); ctx.lineTo(X(0),padT+h); ctx.closePath();
+    ctx.fillStyle=grad; ctx.fill();
+
+    // line
+    ctx.beginPath(); ctx.moveTo(X(0),Y(series[0]));
+    for(let i=1;i<n;i++) ctx.lineTo(X(i),Y(series[i]));
+    ctx.strokeStyle=opts.color; ctx.lineWidth=2.4; ctx.lineJoin="round"; ctx.stroke();
+
+    // gold measured markers
+    if(opts.gold){
+      for(const g of opts.gold){
+        if(g.t>=n) continue;
+        ctx.beginPath(); ctx.arc(X(g.t),Y(g.val),3.6,0,Math.PI*2);
+        ctx.fillStyle="#ffd24a"; ctx.fill(); ctx.strokeStyle="#7a5b12"; ctx.lineWidth=1; ctx.stroke();
+      }
+    }
+    // cursor
+    if(opts.cursor!=null && opts.cursor<n){
+      const cx=X(opts.cursor);
+      ctx.strokeStyle="rgba(255,255,255,.35)"; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(cx,padT); ctx.lineTo(cx,padT+h); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(cx,Y(series[opts.cursor]),4.5,0,Math.PI*2);
+      ctx.fillStyle="#fff"; ctx.fill(); ctx.strokeStyle=opts.color; ctx.lineWidth=2.5; ctx.stroke();
+    }
+  }
+  function drawCharts(cursor){
+    if(!RESULTS.length) return;
+    lineChart($("c1"), RESULTS.map(r=>r.powerTWh), {min:0,max:25,color:"#ffd24a",cursor});
+    lineChart($("c2"), RESULTS.map(r=>r.cropPct),  {min:0,max:100,color:"#5fd08a",cursor});
+    const goldPts = (activePreset==="history") ? GOLD.map(g=>({t:g.t,val:g.lvl})) : null;
+    lineChart($("c3"), RESULTS.map(r=>r.level),    {min:18,max:54,color:"#37c0d6",cursor,gold:goldPts});
+  }
+
+  // ---------------------------------------------------------------------------
+  // SCORE + VERDICT
+  // ---------------------------------------------------------------------------
+  function scoreRun(){
+    // average the final third of the run — the outcome you actually steered toward
+    const tail = RESULTS.slice(-10);
+    const avg = k => tail.reduce((a,r)=>a+k(r),0)/tail.length;
+    const power = clamp(avg(r=>r.powerTWh)/16, 0, 1);
+    // rescale to PLAYABLE ranges: 80% crops and ~half-full sea are the realistic frontier,
+    // because you physically cannot keep a full sea AND full irrigation on the same rivers.
+    const cropN = clamp(avg(r=>r.cropPct)/80, 0, 1);
+    const seaH  = avg(r=>r.seaHealth);
+    const seaN  = clamp((seaH-0.10)/0.50, 0, 1);
+    // fairness: how evenly the five countries share the pain (1 = everyone equal)
+    const fairness = avg(r=>{
+      const vals=Object.values(r.countries); const m=vals.reduce((a,b)=>a+b,0)/vals.length;
+      const varc=vals.reduce((a,b)=>a+(b-m)*(b-m),0)/vals.length;
+      return clamp(1-Math.sqrt(varc)*1.6,0,1);
+    });
+    const base = 0.22*power + 0.30*cropN + 0.30*seaN + 0.18*fairness;
+    // a dying sea is a real disaster (dust, lost fishery, health) that crops+power can't buy back
+    const penalty = seaH<0.25 ? (0.55 + 0.45*(seaH/0.25)) : 1;
+    const score = Math.round(100*clamp(base*penalty, 0, 1));
+    return {score, power, crop:cropN, sea:seaH, fairness};
+  }
+  function verdictFor(s){
+    const {score, sea, crop, power} = s;
+    // specific-imbalance narratives first — they are more honest than a generic score tier
+    if(sea<0.15) return ["You emptied the Aral","The dams ran, the cotton grew, and the sea became a salt desert. This is the road the Soviet planners actually took."];
+    if(crop>0.8 && sea<0.45) return ["Fed the fields, starved the sea","Full harvests, empty terminus. The classic trade that dried the Aral in the first place."];
+    if(power>0.85 && crop<0.4) return ["The upstream deal","The mountains have electricity all winter, but the downstream fields went thirsty. Expect an angry phone call from Tashkent."];
+    if(score>=80) return ["Master of the basin","You threaded the needle: real power, fed fields, and a sea that survives. Almost nobody manages all three."];
+    if(score>=64) return ["A workable peace","Everyone gives up something and nobody is ruined. This is what good water diplomacy actually looks like."];
+    if(score>=45) return ["Muddling through","No disaster, but no one's happy. The tradeoffs are beating you — tune the releases."];
+    return ["The system is breaking","Too little power, thin harvests, a dying sea. Rethink who gets the water and when."];
+  }
+  function renderScore(){
+    const s = scoreRun();
+    $("scoreNum").textContent = s.score;
+    const circ=2*Math.PI*56;
+    const off = circ*(1-s.score/100);
+    const arc=$("ringArc"); arc.setAttribute("stroke-dasharray",circ.toFixed(1)); arc.setAttribute("stroke-dashoffset",off.toFixed(1));
+    arc.setAttribute("stroke", s.score>=65?"#5fd08a":s.score>=45?"#ffab5e":"#ff6b6b");
+    const [t,txt]=verdictFor(s);
+    $("verdictTitle").textContent=t; $("verdictText").textContent=txt;
+  }
+
+  // ---------------------------------------------------------------------------
+  // RUN
+  // ---------------------------------------------------------------------------
+  function run(policyFn){
+    RESULTS = simulate(policyFn);
+    const scrub=$("scrub"); scrub.max=RESULTS.length-1; scrub.value=RESULTS.length-1;
+    renderScore();
+    renderYear(RESULTS.length-1);
+    setScrubLabel(RESULTS.length-1);
+  }
+  function runFromSliders(){
+    stopPlay();
+    const pol = readPolicy();
+    run(()=>pol);
+  }
+  function runPreset(key){
+    stopPlay();
+    activePreset=key;
+    document.querySelectorAll(".preset").forEach(b=>b.classList.toggle("active",b.dataset.preset===key));
+    const p=PRESETS[key];
+    if(!p.history){
+      // reflect preset onto sliders for a fixed policy
+      const pol=p.policy(0);
+      sliders.syrRel.value=pol.syr.rel; sliders.syrWin.value=pol.syr.win; sliders.syrIrr.value=pol.syr.irr;
+      sliders.amuRel.value=pol.amu.rel; sliders.amuWin.value=pol.amu.win; sliders.amuIrr.value=pol.amu.irr;
+      sliders.clim.value=pol.climate; syncSliderLabels();
+    } else { syncSliderLabels(); }
+    run(p.policy);
+  }
+
+  // ---------------------------------------------------------------------------
+  // SCRUBBER
+  // ---------------------------------------------------------------------------
+  function setScrubLabel(i){
+    $("scrubYr").textContent="Yr "+(i+1);
+    if(RESULTS[i]) $("scrubNote").textContent="Year "+RESULTS[i].year+" — "+
+      ($("oSeaD").textContent);
+  }
+  function stopPlay(){ if(playTimer){clearInterval(playTimer); playTimer=null; $("playBtn").textContent="▶";} }
+  function togglePlay(){
+    if(playTimer){ stopPlay(); return; }
+    if(!RESULTS.length) return;
+    $("playBtn").textContent="❚❚";
+    let i = (+$("scrub").value>=RESULTS.length-1)?0:+$("scrub").value;
+    playTimer=setInterval(()=>{
+      $("scrub").value=i; renderYear(i); setScrubLabel(i);
+      if(i>=RESULTS.length-1){ stopPlay(); return; }
+      i++;
+    },140);
+  }
+
+  // ---------------------------------------------------------------------------
+  // CSV EXPORT
+  // ---------------------------------------------------------------------------
+  function exportCSV(){
+    if(!RESULTS.length){ runFromSliders(); }
+    const head=["year","electricity_TWh","crop_pct","aral_level_m","aral_volume_km3","aral_area_km2",
+                "sat_KGZ","sat_TJK","sat_UZB","sat_TKM","sat_KAZ"];
+    const rows=RESULTS.map(r=>[r.year,r.powerTWh.toFixed(2),r.cropPct.toFixed(1),r.level.toFixed(2),
+      r.seaV.toFixed(1),Math.round(r.seaArea),
+      r.countries.KGZ.toFixed(2),r.countries.TJK.toFixed(2),r.countries.UZB.toFixed(2),
+      r.countries.TKM.toFixed(2),r.countries.KAZ.toFixed(2)].join(","));
+    const csv=[head.join(","),...rows].join("\n");
+    const blob=new Blob([csv],{type:"text/csv"});
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download="upstream_run_"+(activePreset||"custom")+".csv"; a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ---------------------------------------------------------------------------
+  // WIRING
+  // ---------------------------------------------------------------------------
+  function init(){
+    buildCountries();
+    syncSliderLabels();
+    // slider live labels (do not auto-run; user hits Run)
+    Object.values(sliders).forEach(sl=>sl.addEventListener("input",()=>{
+      syncSliderLabels();
+      // manual edit drops the preset highlight
+      activePreset=null; document.querySelectorAll(".preset").forEach(b=>b.classList.remove("active"));
+    }));
+    $("runBtn").addEventListener("click",runFromSliders);
+    $("csvBtn").addEventListener("click",exportCSV);
+    $("playBtn").addEventListener("click",togglePlay);
+    $("scrub").addEventListener("input",e=>{ stopPlay(); const i=+e.target.value; renderYear(i); setScrubLabel(i); });
+    document.querySelectorAll(".preset").forEach(b=>b.addEventListener("click",()=>runPreset(b.dataset.preset)));
+    window.addEventListener("resize",()=>{ if(RESULTS.length) drawCharts(+$("scrub").value); });
+    $("stamp").textContent = new Date().getFullYear();
+    // first paint: the balanced preset
+    runPreset("balanced");
+  }
+  if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",init); else init();
+})();
+</script>
+</body>
+</html>
