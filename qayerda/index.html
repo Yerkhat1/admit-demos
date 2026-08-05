@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Qayerda — biznes uchun bo'sh joy qayerda</title>
+<style>
+  :root{
+    --bg:#0a0e1a; --bg2:#111834; --card:#151c38; --line:#25305c;
+    --ink:#eef1ff; --mut:#95a0c8; --hot:#ff5d73; --warm:#ffb454; --cool:#3ddc97; --blue:#5b8cff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;-webkit-font-smoothing:antialiased}
+  body{background:radial-gradient(1100px 600px at 15% -10%,rgba(91,140,255,.18),transparent 60%),radial-gradient(900px 500px at 110% 10%,rgba(61,220,151,.12),transparent 55%),var(--bg)}
+  .wrap{max-width:1040px;margin:0 auto;padding:26px 18px 70px}
+  header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:26px;letter-spacing:-.5px;background:linear-gradient(90deg,#8fb0ff,#3ddc97);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tag{color:var(--mut);font-size:14px}
+  h1{font-size:clamp(26px,5vw,44px);line-height:1.04;letter-spacing:-1px;margin:18px 0 6px;font-weight:800}
+  h1 .g{background:linear-gradient(90deg,#5b8cff,#3ddc97);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);font-size:16px;max-width:640px}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:20px 0 8px}
+  select,button{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px;cursor:pointer}
+  select{min-width:180px}
+  .cta{background:linear-gradient(90deg,#5b8cff,#3ddc97);color:#04121a;font-weight:700;border:none;padding:12px 20px;box-shadow:0 10px 30px rgba(61,220,151,.25);transition:transform .12s}
+  .cta:hover{transform:translateY(-2px)}
+  .legend{display:flex;gap:14px;align-items:center;color:var(--mut);font-size:13px;margin:6px 2px 14px;flex-wrap:wrap}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .grid-scroll{overflow-x:auto;border-radius:16px}
+  table{border-collapse:separate;border-spacing:6px;margin:0 auto}
+  th.col{color:var(--mut);font-weight:600;font-size:12px;text-align:center;padding:2px 4px;max-width:76px}
+  th.row{color:var(--ink);font-weight:600;font-size:13px;text-align:right;padding-right:10px;white-space:nowrap}
+  td.cell{width:60px;height:44px;border-radius:10px;cursor:pointer;position:relative;transition:transform .1s,box-shadow .1s;border:1px solid rgba(255,255,255,.05)}
+  td.cell:hover{transform:scale(1.14);box-shadow:0 6px 18px rgba(0,0,0,.5);z-index:5}
+  td.cell.top{outline:2px solid #fff;outline-offset:1px;animation:pulse 1.1s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.5)}50%{box-shadow:0 0 0 7px rgba(255,255,255,0)}}
+  .cell .v{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#04121a;opacity:.0;transition:opacity .1s}
+  td.cell:hover .v,.showv td.cell .v{opacity:.85}
+  .panel{margin-top:20px;background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;min-height:96px}
+  .panel .k{color:var(--mut);font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+  .panel h2{margin:6px 0 4px;font-size:22px}
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .chip{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-size:13px}
+  .chip b{color:#fff}
+  .verdict{margin-top:12px;font-size:15px;line-height:1.5}
+  .best{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+  .bestcard{flex:1;min-width:210px;background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .bestcard .r{font-size:12px;color:var(--mut)}
+  .bestcard .s{font-size:15px;font-weight:700;margin-top:2px}
+  .bestcard .m{font-size:13px;color:var(--cool);margin-top:6px}
+  details{margin-top:26px;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;padding:2px 16px}
+  summary{cursor:pointer;padding:12px 0;color:var(--mut);font-size:14px}
+  details p{color:var(--mut);font-size:13px;line-height:1.6}
+  footer{margin-top:30px;color:var(--mut);font-size:12px;text-align:center}
+  .toggle{margin-left:auto;color:var(--mut);font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="logo">Qayerda</span>
+    <span class="tag">biznes uchun bo'sh joy qayerda — where to build</span>
+  </header>
+
+  <h1>Hamma bir xil biznes ochadi.<br><span class="g">Bo'sh joyni ko'r.</span></h1>
+  <p class="sub">Har bir katak = viloyat × soha. Yorqin yashil = talab yuqori, raqobat past. Aynan o'sha yerda yangi biznes ochish oson. Kataki bosing.</p>
+
+  <div class="bar">
+    <select id="region"><option value="">Butun O'zbekiston</option></select>
+    <button class="cta" id="find">Eng yaxshi bo'sh joyni top ✦</button>
+    <label class="toggle"><input type="checkbox" id="showv"> raqamlarni ko'rsat</label>
+  </div>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--hot)"></span>to'lgan bozor</span>
+    <span><span class="dot" style="background:var(--warm)"></span>o'rtacha</span>
+    <span><span class="dot" style="background:var(--cool)"></span>bo'sh joy — imkoniyat</span>
+    <span style="margin-left:auto">ball = o'sish − raqobat</span>
+  </div>
+
+  <div class="grid-scroll"><div id="grid"></div></div>
+
+  <div class="panel" id="panel">
+    <div class="k">Kataki tanlang</div>
+    <h2>Imkoniyat kartasi</h2>
+    <div class="verdict" style="color:var(--mut)">Yuqoridagi jadvaldan istalgan kataki bosing yoki "Eng yaxshi bo'sh joyni top" tugmasini bosing.</div>
+  </div>
+
+  <details>
+    <summary>Ma'lumot qayerdan? (namuna ma'lumot — ochish uchun bosing)</summary>
+    <p><b>Bu raqamlar namuna (illustrativ), jonli ma'lumot emas.</b> Qayerda — bu <i>linza</i>: viloyat × soha bo'yicha yangi biznes ochilishini o'sish va zichlik sifatida ko'rsatadi. Ramil buni o'zining stat.uz yangi-biznes ma'lumotlari bilan almashtiradi, va jadval o'sha real raqamlar bilan xuddi shunday ishlaydi. Ball = normallashtirilgan (o'sish sur'ati) − (10 ming kishiga to'g'ri keladigan mavjud biznes zichligi). Yashil = yuqori o'sish + past zichlik. Model haqiqiy; raqamlar hozircha o'rnini bosuvchi. (Core Law 4: namuna deb belgilangan.)</p>
+  </details>
+
+  <footer>Ramil Rambergenov · tech project prototype · admit-demos</footer>
+</div>
+
+<script>
+// ---- SAMPLE (illustrative) data. Model is real; numbers are placeholders until wired to stat.uz. ----
+const REGIONS = ["Toshkent sh.","Toshkent v.","Samarqand","Buxoro","Farg'ona","Andijon","Namangan","Qashqadaryo","Surxondaryo","Xorazm","Navoiy","Jizzax","Sirdaryo","Qoraqalpog'iston"];
+const SECTORS = ["Ovqatlanish","Chakana savdo","IT / xizmat","Ta'lim","Sog'liq","Qurilish","Logistika","Turizm","Qishloq x."];
+// deterministic pseudo-values so it is stable and reproducible (no Math.random at runtime)
+function seeded(r,c){let x=Math.sin((r+1)*12.9898+(c+1)*78.233)*43758.5453;return x-Math.floor(x);}
+const data=REGIONS.map((_,r)=>SECTORS.map((_,c)=>{
+  const growth=Math.round(4+seeded(r,c)*26);            // yoy % new-business formation (sample)
+  const density=Math.round(6+seeded(c,r)*44);           // existing businesses per 10k (sample)
+  // opportunity: high growth, low density -> normalise each to 0..1
+  const g=(growth-4)/26, d=(density-6)/44;
+  const score=Math.round((0.62*g + 0.38*(1-d))*100);
+  return {growth,density,score};
+}));
+
+const grid=document.getElementById('grid');
+const regionSel=document.getElementById('region');
+REGIONS.forEach((rn,i)=>{const o=document.createElement('option');o.value=i;o.textContent=rn;regionSel.appendChild(o);});
+
+function color(s){ // 0..100 -> hot->warm->cool
+  if(s>=66) return `hsl(${150+ (s-66)*0.6}, 62%, ${34+ (s-66)*0.25}%)`;
+  if(s>=40) return `hsl(${38+ (s-40)*2.2}, 85%, 52%)`;
+  return `hsl(${max(-2, 4-(40-s)*0.25)}, 78%, 56%)`;
+}
+function max(a,b){return a>b?a:b;}
+
+let filterRegion="";
+function render(){
+  const showv=document.getElementById('showv').checked;
+  let html='<table><thead><tr><th class="row"></th>';
+  SECTORS.forEach(s=>html+=`<th class="col">${s}</th>`);
+  html+='</tr></thead><tbody>';
+  // find global top for highlight
+  let top={s:-1};
+  REGIONS.forEach((rn,r)=>{ if(filterRegion!==""&&String(r)!==filterRegion)return;
+    SECTORS.forEach((sn,c)=>{ if(data[r][c].score>top.s){top={s:data[r][c].score,r,c};}});});
+  REGIONS.forEach((rn,r)=>{
+    if(filterRegion!==""&&String(r)!==filterRegion)return;
+    html+=`<tr><th class="row">${rn}</th>`;
+    SECTORS.forEach((sn,c)=>{
+      const d=data[r][c];
+      const istop=(r===top.r&&c===top.c);
+      html+=`<td class="cell${istop?' top':''}" data-r="${r}" data-c="${c}" style="background:${color(d.score)}"><span class="v">${d.score}</span></td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  grid.className=showv?'showv':'';
+  grid.innerHTML=html;
+  grid.querySelectorAll('td.cell').forEach(td=>td.addEventListener('click',()=>select(+td.dataset.r,+td.dataset.c)));
+}
+
+function select(r,c){
+  const d=data[r][c];
+  const p=document.getElementById('panel');
+  const gap = d.score>=66 ? 'Katta bo\'sh joy' : d.score>=40 ? 'O\'rtacha imkoniyat' : 'To\'lgan bozor';
+  const advice = d.score>=66
+     ? `<b>${SECTORS[c]}</b> — ${REGIONS[r]}da talab tez o'smoqda (+${d.growth}%/yil) va raqobat past (10 mingga ${d.density} biznes). Yangi biznes uchun kuchli joy.`
+     : d.score>=40
+     ? `<b>${SECTORS[c]}</b> — ${REGIONS[r]}da imkoniyat bor, lekin raqobat sezilarli. Farqlanish kerak.`
+     : `<b>${SECTORS[c]}</b> — ${REGIONS[r]}da bozor to'lgan (10 mingga ${d.density} biznes). Bu yerda hamma ochadi; bo'sh joyni boshqa yerdan qidiring.`;
+  p.innerHTML=`<div class="k">${REGIONS[r]} · ${SECTORS[c]}</div>
+    <h2>${gap} · ball ${d.score}</h2>
+    <div class="chips">
+      <span class="chip">o'sish <b>+${d.growth}%</b>/yil</span>
+      <span class="chip">zichlik <b>${d.density}</b>/10k</span>
+      <span class="chip">imkoniyat balli <b>${d.score}</b>/100</span>
+    </div>
+    <div class="verdict">${advice}</div>`;
+  document.querySelectorAll('td.cell').forEach(td=>td.style.outline='');
+  const sel=document.querySelector(`td.cell[data-r="${r}"][data-c="${c}"]`);
+  if(sel){sel.style.outline='2px solid #fff';sel.style.outlineOffset='1px';}
+}
+
+function bestGaps(){
+  let all=[];
+  REGIONS.forEach((rn,r)=>{ if(filterRegion!==""&&String(r)!==filterRegion)return;
+    SECTORS.forEach((sn,c)=>all.push({r,c,...data[r][c]}));});
+  all.sort((a,b)=>b.score-a.score);
+  const top3=all.slice(0,3);
+  const p=document.getElementById('panel');
+  select(top3[0].r,top3[0].c);
+  const cards=top3.map((t,i)=>`<div class="bestcard"><div class="r">#${i+1} · ${REGIONS[t.r]}</div><div class="s">${SECTORS[t.c]}</div><div class="m">ball ${t.score} · +${t.growth}% · ${t.density}/10k</div></div>`).join('');
+  p.innerHTML+=`<div class="best">${cards}</div>`;
+  // scroll top cell into view
+  const cell=document.querySelector('td.cell.top');
+}
+
+regionSel.addEventListener('change',e=>{filterRegion=e.target.value;render();});
+document.getElementById('showv').addEventListener('change',render);
+document.getElementById('find').addEventListener('click',bestGaps);
+render();
+</script>
+</body>
+</html>
