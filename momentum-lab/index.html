@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Momentum Lab — does buying winners work?</title>
+<style>
+  :root{--bg:#070b16;--card:#111a2e;--line:#233150;--ink:#eaf0ff;--mut:#8ea0c6;--mom:#3ddc97;--bh:#5b8cff;--win:#3ddc97;--lose:#ff5d73}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;-webkit-font-smoothing:antialiased}
+  body{background:radial-gradient(1000px 560px at 80% -10%,rgba(61,220,151,.14),transparent 60%),radial-gradient(900px 500px at 0% 0%,rgba(91,140,255,.16),transparent 55%),var(--bg)}
+  .wrap{max-width:920px;margin:0 auto;padding:26px 18px 70px}
+  .logo{font-weight:800;font-size:24px;background:linear-gradient(90deg,#7ef0bd,#5b8cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  h1{font-size:clamp(26px,5vw,42px);line-height:1.05;letter-spacing:-1px;margin:14px 0 6px;font-weight:800}
+  .sub{color:var(--mut);font-size:16px;max-width:600px}
+  .markets{display:flex;gap:10px;margin:22px 0 6px;flex-wrap:wrap}
+  .mkt{flex:1;min-width:150px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;transition:transform .1s,border-color .1s}
+  .mkt:hover{transform:translateY(-2px)}
+  .mkt.on{border-color:var(--mom);box-shadow:0 0 0 1px var(--mom),0 12px 30px rgba(61,220,151,.18)}
+  .mkt .n{font-weight:700;font-size:16px}
+  .mkt .d{color:var(--mut);font-size:12.5px;margin-top:3px}
+  .controls{display:flex;gap:16px;align-items:center;margin:16px 0;flex-wrap:wrap}
+  .run{background:linear-gradient(90deg,#3ddc97,#5b8cff);color:#03121a;font-weight:800;border:none;border-radius:14px;padding:14px 26px;font-size:16px;cursor:pointer;box-shadow:0 12px 30px rgba(61,220,151,.25);transition:transform .12s}
+  .run:hover{transform:translateY(-2px)}
+  .lb{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:10px}
+  input[type=range]{accent-color:var(--mom)}
+  .chartwrap{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-top:6px}
+  canvas{width:100%;height:300px;display:block}
+  .keys{display:flex;gap:18px;margin:8px 4px 0;font-size:13px;color:var(--mut);flex-wrap:wrap}
+  .keys b{color:#fff}
+  .swatch{display:inline-block;width:22px;height:4px;border-radius:2px;margin-right:6px;vertical-align:3px}
+  .reveal{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s}
+  .reveal.show{opacity:1;transform:none}
+  .reveal .head{font-size:22px;font-weight:800}
+  .reveal .why{color:var(--mut);font-size:15px;margin-top:8px;line-height:1.55}
+  .stat{display:inline-flex;flex-direction:column;margin-right:26px}
+  .stat .l{font-size:12px;color:var(--mut);text-transform:uppercase;letter-spacing:.4px}
+  .stat .b{font-size:24px;font-weight:800}
+  details{margin-top:26px;background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:14px;padding:2px 16px}
+  summary{cursor:pointer;padding:12px 0;color:var(--mut);font-size:14px}
+  details p{color:var(--mut);font-size:13px;line-height:1.6}
+  footer{margin-top:28px;color:var(--mut);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="logo">Momentum Lab</span>
+  <h1>Buy the recent winners.<br>Does it actually work?</h1>
+  <p class="sub">Pick a market. Run 10 years. Watch a simple momentum rule (stay in while the trend is up, step out when it turns) race plain buy-and-hold.</p>
+
+  <div class="markets" id="markets"></div>
+
+  <div class="controls">
+    <button class="run" id="run">Run 10 years ▶</button>
+    <label class="lb">how recent is "winning"? <input type="range" id="lb" min="1" max="12" value="6"><span id="lbv">6 mo</span></label>
+  </div>
+
+  <div class="chartwrap"><canvas id="c" width="880" height="300"></canvas></div>
+  <div class="keys">
+    <span><span class="swatch" style="background:var(--mom)"></span>Momentum <b id="kMom">—</b></span>
+    <span><span class="swatch" style="background:var(--bh)"></span>Buy &amp; hold <b id="kBh">—</b></span>
+    <span style="margin-left:auto" id="timeoutTxt"></span>
+  </div>
+
+  <div class="reveal" id="reveal">
+    <div class="head" id="head"></div>
+    <div class="why" id="why"></div>
+    <div style="margin-top:14px">
+      <span class="stat"><span class="l">Momentum</span><span class="b" id="sMom" style="color:var(--mom)"></span></span>
+      <span class="stat"><span class="l">Buy &amp; hold</span><span class="b" id="sBh" style="color:var(--bh)"></span></span>
+      <span class="stat"><span class="l">Worst drop (B&amp;H)</span><span class="b" id="sDd"></span></span>
+    </div>
+  </div>
+
+  <details>
+    <summary>Where's the data from? (stylized patterns — click to open)</summary>
+    <p><b>These are stylized market patterns for learning, not live market data.</b> Each market is a deterministic price path chosen to show one real behaviour: a steady developed market, an emerging market that runs then crashes then recovers, and a choppy frontier market with no trend. Xursandbek can wire in real historical index series (developed / emerging / frontier) later and the same momentum rule runs unchanged. The rule itself is real time-series momentum: hold the market while its trailing return over the lookback window is positive, sit in cash (0% return) when it is negative. No invented "real" figures are presented as live. (Core Law 4.)</p>
+  </details>
+
+  <footer>Xursandbek Jumabayev · tech project prototype · admit-demos</footer>
+</div>
+
+<script>
+const MARKETS=[
+  {id:"dev", n:"Developed", d:"Steady, low drama", drift:0.007, build:devPath},
+  {id:"emg", n:"Emerging", d:"Runs, then crashes, then recovers", drift:0, build:emgPath},
+  {id:"fro", n:"Frontier", d:"Choppy, no real trend", drift:0, build:froPath},
+];
+const N=120; // months
+// deterministic paths (no runtime randomness) so results are reproducible
+function noise(i,s){let x=Math.sin(i*12.9898+s*7.13)*43758.5453;return (x-Math.floor(x))-0.5;}
+function devPath(){let p=[100];for(let i=1;i<N;i++){let r=0.008+noise(i,1)*0.012;p.push(p[i-1]*(1+r));}return p;}
+function emgPath(){let p=[100];for(let i=1;i<N;i++){let phase;
+  if(i<44) phase=0.022+noise(i,2)*0.03;          // strong run
+  else if(i<56) phase=-0.075+noise(i,2)*0.02;    // crash ~-60% over a year
+  else phase=0.016+noise(i,2)*0.035;             // recovery
+  p.push(p[i-1]*(1+phase));}return p;}
+function froPath(){let p=[100];for(let i=1;i<N;i++){let rev=-0.18*(p[i-1]/100-1);let r=rev+noise(i,3)*0.055;p.push(Math.max(5,p[i-1]*(1+r)));}return p;}
+
+function momentum(prices,lb){
+  // equity of: invested next month if trailing lb-month return>0 else cash
+  let eq=[100];
+  for(let i=1;i<prices.length;i++){
+    let invested = i>lb ? (prices[i-1]/prices[i-1-lb]-1)>0 : true;
+    let r = invested ? (prices[i]/prices[i-1]-1) : 0;
+    eq.push(eq[i-1]*(1+r));
+  }
+  return eq;
+}
+function buyhold(prices){return prices.map(p=>p/prices[0]*100);}
+function maxDD(eq){let peak=eq[0],dd=0;for(const v of eq){peak=Math.max(peak,v);dd=Math.min(dd,v/peak-1);}return dd;}
+
+let cur=MARKETS[0];
+const mkEl=document.getElementById('markets');
+MARKETS.forEach((m,i)=>{const el=document.createElement('div');el.className='mkt'+(i===0?' on':'');el.innerHTML=`<div class="n">${m.n}</div><div class="d">${m.d}</div>`;el.onclick=()=>{cur=m;[...mkEl.children].forEach(c=>c.classList.remove('on'));el.classList.add('on');};mkEl.appendChild(el);});
+
+const lb=document.getElementById('lb'),lbv=document.getElementById('lbv');
+lb.oninput=()=>lbv.textContent=lb.value+' mo';
+
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+function draw(prices,mom,bh,upto){
+  const W=cv.width,H=cv.height,pad=34;
+  ctx.clearRect(0,0,W,H);
+  const all=bh.concat(mom);let lo=Math.min(...all),hi=Math.max(...all);
+  const x=i=>pad+(W-pad*1.4)*(i/(N-1));
+  const y=v=>H-pad-(H-pad*1.8)*((v-lo)/(hi-lo||1));
+  // grid
+  ctx.strokeStyle="rgba(255,255,255,.06)";ctx.lineWidth=1;
+  for(let g=0;g<=4;g++){let yy=pad+ (H-pad*1.8)*g/4;ctx.beginPath();ctx.moveTo(pad,yy);ctx.lineTo(W-pad*0.4,yy);ctx.stroke();}
+  function line(arr,col,w){ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();for(let i=0;i<=upto;i++){const px=x(i),py=y(arr[i]);i?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.stroke();}
+  line(bh,getCss('--bh'),2.4);
+  line(mom,getCss('--mom'),2.8);
+}
+function getCss(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+let anim;
+function run(){
+  const prices=cur.build();
+  const mom=momentum(prices,+lb.value);
+  const bh=buyhold(prices);
+  document.getElementById('reveal').classList.remove('show');
+  cancelAnimationFrame(anim);
+  let f=0;
+  function step(){
+    draw(prices,mom,bh,f);
+    document.getElementById('kMom').textContent=Math.round(mom[f])+'';
+    document.getElementById('kBh').textContent=Math.round(bh[f])+'';
+    if(f<N-1){f+=2;if(f>N-1)f=N-1;anim=requestAnimationFrame(step);}
+    else finish(prices,mom,bh);
+  }
+  step();
+}
+function finish(prices,mom,bh){
+  const mF=mom[N-1],bF=bh[N-1];
+  const momWin=mF>bF*1.01, tie=Math.abs(mF-bF)<=bF*0.01;
+  const dd=maxDD(bh);
+  const r=document.getElementById('reveal');
+  let head,why;
+  if(tie){head="Basically a tie.";why="The market trended smoothly, so staying in (momentum) and never leaving (buy & hold) did almost the same thing. Momentum earns its keep when the trend actually breaks.";head='<span style="color:#fff">'+head+'</span>';}
+  else if(momWin){head='<span style="color:var(--win)">Momentum won.</span>';why="It stepped out when the trend turned negative, so it dodged the worst of the crash that buy & hold rode all the way down. Avoiding the big drop is where momentum pays off.";}
+  else {head='<span style="color:var(--lose)">Momentum lost.</span>';why="With no real trend, the rule kept getting faked out: it bought back in after a bounce, then the market fell again. Each in-and-out cost a little. In a choppy market, plain buy & hold wins.";}
+  document.getElementById('head').innerHTML=head;
+  document.getElementById('why').textContent=why;
+  document.getElementById('sMom').textContent=Math.round((mF/100-1)*100)+'%';
+  document.getElementById('sBh').textContent=Math.round((bF/100-1)*100)+'%';
+  document.getElementById('sDd').textContent=Math.round(dd*100)+'%';
+  document.getElementById('sDd').style.color=getCss('--lose');
+  r.classList.add('show');
+}
+document.getElementById('run').onclick=run;
+// draw an idle preview
+(function(){const p=cur.build();draw(p,momentum(p,6),buyhold(p),N-1);})();
+</script>
+</body>
+</html>
