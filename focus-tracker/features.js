@@ -80,6 +80,85 @@
     toast("CSV downloaded");
   });
 
+  /* ---- JSON backup + restore (survives a browser-cache wipe) ---- */
+  // CSV is for reading in a spreadsheet; this is the real safety net — a full,
+  // re-importable copy of sessions + settings, so clearing the browser can't erase months of work.
+  const backupBtn = document.getElementById("backup-json");
+  if (backupBtn) backupBtn.addEventListener("click", () => {
+    const payload = { app: "focus-tracker", version: 2, exportedAt: new Date().toISOString(), sessions: getSessions(), settings: getSettings() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `focus-tracker-backup-${fmt(new Date())}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    toast("Backup saved — keep it safe");
+  });
+
+  const restoreBtn = document.getElementById("restore-json");
+  const restoreFile = document.getElementById("restore-file");
+  if (restoreBtn && restoreFile) {
+    restoreBtn.addEventListener("click", () => restoreFile.click());
+    restoreFile.addEventListener("change", () => {
+      const file = restoreFile.files && restoreFile.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let data;
+        try { data = JSON.parse(reader.result); } catch (e) { toast("That file isn't a valid backup"); restoreFile.value = ""; return; }
+        if (!data || !Array.isArray(data.sessions)) { toast("That file isn't a Focus Tracker backup"); restoreFile.value = ""; return; }
+        // guard the data shape so a broken file can't corrupt storage
+        const clean = data.sessions
+          .filter((e) => e && typeof e.date === "string" && !isNaN(Number(e.minutes)))
+          .map((e) => ({ date: e.date, subject: String(e.subject || "Study").slice(0, 40), minutes: Math.round(Number(e.minutes)) }));
+        if (!confirm(`Restore ${clean.length} sessions from this backup? This REPLACES the data currently on this device.`)) { restoreFile.value = ""; return; }
+        setSessions(clean);
+        if (data.settings && typeof data.settings === "object") setSettings(data.settings);
+        restoreFile.value = "";
+        renderAll();
+        toast(`Restored ${clean.length} sessions`);
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  /* ---- auto-break: offered after a full focus block finishes ---- */
+  // Purely a rest timer — it never logs a study session. Exposed as a global so
+  // app.js's completeSession() can call it without importing anything.
+  const BREAK_MIN = 5;
+  let breakId = null;
+  const breakEl = () => document.getElementById("break-banner");
+  function stopBreak() { clearInterval(breakId); breakId = null; const el = breakEl(); if (el) el.hidden = true; }
+  window.offerBreak = function () {
+    const el = breakEl();
+    if (!el) return;
+    stopBreak();
+    el.hidden = false;
+    el.className = "break-banner offer";
+    el.innerHTML =
+      `<span>☕ Block done. Take a ${BREAK_MIN}-min break so you come back fresh.</span>` +
+      `<span class="break-actions"><button id="break-start" class="ghost-btn tiny">Start break</button><button id="break-skip" class="ghost-btn tiny">Skip</button></span>`;
+    document.getElementById("break-skip").addEventListener("click", stopBreak);
+    document.getElementById("break-start").addEventListener("click", () => startBreak(BREAK_MIN));
+  };
+  function startBreak(min) {
+    const el = breakEl();
+    if (!el) return;
+    let left = min * 60;
+    const paint = () => {
+      const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
+      el.className = "break-banner running";
+      el.innerHTML = `<span>😌 Break — back in <b>${mm}:${ss}</b></span><span class="break-actions"><button id="break-end" class="ghost-btn tiny">End break</button></span>`;
+      document.getElementById("break-end").addEventListener("click", stopBreak);
+    };
+    paint();
+    clearInterval(breakId);
+    breakId = setInterval(() => {
+      left--;
+      if (left <= 0) { stopBreak(); toast("Break over — ready for the next block?"); return; }
+      paint();
+    }, 1000);
+  }
+
   /* ---- shareable streak card (PNG) ---- */
   const shareBtn = document.getElementById("share-card");
   if (shareBtn) shareBtn.addEventListener("click", () => {

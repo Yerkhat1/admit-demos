@@ -15,18 +15,22 @@
  */
 
 const STORE = { sessions: "ft.sessions.v2", settings: "ft.settings.v2", timer: "ft.timer.v2" };
-const DEFAULT_SUBJECTS = ["Math", "Physics", "Chemistry", "English", "Biology"];
-const DEFAULT_GOAL = 120;
+const DEFAULT_SUBJECTS = ["Physics", "Chemistry", "English", "Biology", "Math"];
+const DEFAULT_GOAL = 25; // Mark's call: a doable daily goal for a student just getting back into it
 const RING_C = 2 * Math.PI * 52; // circumference of the ring (r = 52)
 
 let selectedSubject = null;
-let selectedMinutes = 45;
+let selectedMinutes = 25;
 let subjectRange = "week";
 // endAt = wall-clock (Date.now ms) the running session should hit 0. We time the
 // session by comparing to the real clock, not by counting ticks, so a phone that
 // locks or a backgrounded tab (where the browser throttles setInterval) still shows
 // the true remaining time instead of freezing.
 let timer = { total: 0, remaining: 0, running: false, id: null, inSession: false, endAt: null };
+// how many times the student left the tab during the CURRENT focus session (the
+// "don't drift to TikTok" guard). We can't lock a browser tab, but we can count the
+// times focus left and nudge — honest, and it makes the session feel guarded.
+let distractions = 0;
 
 /* ---------- storage ---------- */
 function load(key, fallback) {
@@ -190,7 +194,7 @@ function renderChainNudge() {
     msg = current > 1 ? `🔥 ${current}-day streak, and today is done. Chain unbroken.` : "✅ Studied today. Come back tomorrow to start a streak.";
     cls = "safe";
   } else if (current >= 1) {
-    msg = `🔥 ${current}-day streak at risk. One focus session today keeps the chain.`;
+    msg = `🔥 ${current} days in a row so far — that's real progress. Don't lose it: one focus session today keeps the chain.`;
     cls = "risk";
   } else {
     msg = "No streak yet. One focus session today starts the chain.";
@@ -239,7 +243,7 @@ function renderHeatmap() {
     const cell = document.createElement("div");
     cell.className = "cell";
     const min = byDate[ds];
-    if (min !== undefined) cell.classList.add(min >= 90 ? "high" : min >= 45 ? "mid" : "low");
+    if (min !== undefined) cell.classList.add(min >= 150 ? "high" : min >= 60 ? "mid" : "low"); // Mark's read of his tutees: strong >150m, okay 60-150m, weak <60m
     if (i === 0) cell.classList.add("today");
     cell.title = min !== undefined ? `${ds} · ${fmtDur(min)}` : `${ds} · no study`;
     map.appendChild(cell);
@@ -320,15 +324,30 @@ function tick() {
   if (timer.remaining <= 0) { timer.remaining = 0; renderTimerDisplay(); completeSession(); return; }
   renderTimerDisplay();
 }
+// the focus-guard readout: only visible during a live session
+function renderFocusGuard() {
+  const el = document.getElementById("focus-guard");
+  if (!el) return;
+  if (!timer.inSession) { el.hidden = true; return; }
+  el.hidden = false;
+  if (distractions === 0) {
+    el.className = "focus-guard clean";
+    el.textContent = "🛡️ Focus held — you haven't left this session.";
+  } else {
+    el.className = "focus-guard broken";
+    el.textContent = `👀 Left the app ${distractions}× this session. Stay on the block — the chain is watching.`;
+  }
+}
 function startTimer() {
   if (timer.running) return;
-  if (!timer.inSession) { timer.total = selectedMinutes * 60; timer.remaining = timer.total; timer.inSession = true; }
+  if (!timer.inSession) { timer.total = selectedMinutes * 60; timer.remaining = timer.total; timer.inSession = true; distractions = 0; }
   timer.running = true;
   timer.endAt = Date.now() + timer.remaining * 1000;
   timer.id = setInterval(tick, 1000);
   persistTimer();
   updateControls();
   renderTimerDisplay();
+  renderFocusGuard();
 }
 function pauseTimer() {
   timer.remaining = computeRemaining();
@@ -342,9 +361,11 @@ function pauseTimer() {
 function resetIdle() {
   clearInterval(timer.id);
   timer = { total: selectedMinutes * 60, remaining: selectedMinutes * 60, running: false, id: null, inSession: false, endAt: null };
+  distractions = 0;
   localStorage.removeItem(STORE.timer);
   updateControls();
   renderTimerDisplay();
+  renderFocusGuard();
 }
 // log a finished block, refresh the UI, and celebrate a streak milestone if one was just hit
 function afterLog(minutes, subject, verb) {
@@ -363,6 +384,8 @@ function completeSession() {
   logSession(subject, minutes);
   resetIdle();
   afterLog(minutes, subject, "🎉");
+  // you finished a full planned block — offer a short break (features.js owns the break timer)
+  if (typeof offerBreak === "function") offerBreak();
 }
 function endTimer() {
   timer.remaining = computeRemaining();
@@ -414,8 +437,21 @@ function wire() {
   document.getElementById("pause-btn").addEventListener("click", pauseTimer);
   document.getElementById("end-btn").addEventListener("click", endTimer);
 
-  // coming back to the tab: snap to the real remaining time (finish if it elapsed while away)
-  document.addEventListener("visibilitychange", () => { if (!document.hidden && timer.running) tick(); });
+  // tab visibility while a session runs:
+  //  - leaving (hidden) counts as a distraction and updates the guard
+  //  - coming back snaps to the real remaining time (finishing if it elapsed while away)
+  //    and nudges if focus was broken
+  document.addEventListener("visibilitychange", () => {
+    if (!timer.running) return;
+    if (document.hidden) {
+      distractions++;
+      renderFocusGuard();
+    } else {
+      tick();
+      renderFocusGuard();
+      if (timer.inSession && distractions > 0) toast("👀 Back already? Keep the block going.");
+    }
+  });
 
   document.getElementById("goal-edit").addEventListener("click", () => {
     const s = getSettings();
@@ -447,7 +483,7 @@ function wire() {
       localStorage.removeItem(STORE.sessions);
       localStorage.removeItem(STORE.settings);
       selectedSubject = null;
-      selectedMinutes = 45;
+      selectedMinutes = 25;
       resetIdle();
       renderAll();
       toast("All data cleared");
@@ -503,4 +539,5 @@ clearInterval(timer.id);
 timer = { total: selectedMinutes * 60, remaining: selectedMinutes * 60, running: false, id: null, inSession: false, endAt: null };
 restoreTimer();  // overlay a saved in-progress session, if any
 updateControls();
+renderFocusGuard();
 renderAll();
