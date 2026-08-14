@@ -296,6 +296,38 @@
     border:1px solid var(--line2);color:var(--ink);padding:11px 18px;border-radius:100px;font-size:13px;font-weight:600;
     opacity:0;transition:.2s;pointer-events:none;z-index:20;backdrop-filter:blur(10px)}
   .toast.on{opacity:1}
+
+  /* ---------- top-bar help button ---------- */
+  .tourbtn{cursor:pointer;font:700 12px/1 inherit;color:var(--accent);background:rgba(94,234,212,.07);
+    border:1px solid var(--line2);border-radius:100px;padding:9px 15px;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+  .tourbtn:hover{background:rgba(94,234,212,.14);transform:translateY(-1px)}
+  .tourbtn .pl{font-size:14px;line-height:0}
+
+  /* ---------- guided tour (coach-marks) ---------- */
+  #tourVeil{position:fixed;inset:0;z-index:40;display:none;pointer-events:auto}
+  #tourVeil.on{display:block}
+  #tourHole{position:absolute;border-radius:16px;box-shadow:0 0 0 9999px rgba(4,8,13,.78);
+    transition:all .35s cubic-bezier(.2,.7,.2,1);pointer-events:none;
+    outline:2px solid var(--accent);outline-offset:3px}
+  #tourCard{position:absolute;width:min(340px,calc(100vw - 32px));background:var(--panel2);
+    border:1px solid var(--line2);border-radius:18px;padding:18px 19px 16px;box-shadow:0 30px 70px rgba(0,0,0,.6);
+    transition:top .35s cubic-bezier(.2,.7,.2,1),left .35s cubic-bezier(.2,.7,.2,1);z-index:41}
+  #tourCard .tstep{font:700 10px/1 inherit;letter-spacing:.16em;text-transform:uppercase;color:var(--tm)}
+  #tourCard .ttitle{font-size:18px;font-weight:800;letter-spacing:-.01em;margin:7px 0 6px;
+    background:linear-gradient(90deg,#fff,#cdeef0);-webkit-background-clip:text;background-clip:text;color:transparent}
+  #tourCard .tbody{font-size:13.5px;color:var(--ts);line-height:1.5}
+  #tourCard .tbody b{color:#fff}
+  #tourCard .tfoot{display:flex;align-items:center;gap:10px;margin-top:15px}
+  #tourCard .tdots{display:flex;gap:6px;margin-right:auto}
+  #tourCard .tdots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.16)}
+  #tourCard .tdots i.on{background:var(--accent)}
+  #tourCard button{cursor:pointer;font-family:inherit;font-weight:700;font-size:13px;border-radius:11px;padding:10px 15px;transition:.15s}
+  #tourCard .tskip{background:none;border:none;color:var(--tm);padding:10px 4px}
+  #tourCard .tskip:hover{color:var(--ts)}
+  #tourCard .tnext{color:#042028;background:var(--grad-accent);border:none;box-shadow:0 8px 20px rgba(49,196,230,.3)}
+  #tourCard .tnext:hover{transform:translateY(-1px)}
+  #tourCard .tback{background:rgba(255,255,255,.04);border:1px solid var(--line);color:var(--ts)}
+  @media(max-width:520px){ #tourCard{width:calc(100vw - 24px);left:12px!important} }
 </style>
 </head>
 <body>
@@ -310,7 +342,10 @@
         <div class="btag">The Aral Sea machine · two rivers, two seas, one water budget</div>
       </div>
     </div>
-    <div class="chip">Aral Basin · Systems Lab</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="tourbtn" id="tourStart"><span class="pl">▶</span> How to play</button>
+      <div class="chip">Aral Basin · Systems Lab</div>
+    </div>
   </div>
 
   <!-- CHALLENGE BAR -->
@@ -580,6 +615,23 @@
 </details>
 
 <div class="toast" id="toast"></div>
+
+<!-- GUIDED TOUR -->
+<div id="tourVeil">
+  <div id="tourHole"></div>
+  <div id="tourCard">
+    <div class="tstep" id="tourStepN">Step 1</div>
+    <div class="ttitle" id="tourTitle"></div>
+    <div class="tbody" id="tourBody"></div>
+    <div class="tfoot">
+      <div class="tdots" id="tourDots"></div>
+      <button class="tskip" id="tourSkip">Skip</button>
+      <button class="tback" id="tourBack">Back</button>
+      <button class="tnext" id="tourNext">Next</button>
+    </div>
+  </div>
+</div>
+
 <canvas id="cardCanvas" width="1080" height="1080" style="display:none"></canvas>
 
 <script>
@@ -600,6 +652,19 @@ const P={
   Csat:100                       // g/L saturation — salts precipitate past this
 };
 function seeded(n){let x=Math.sin(n*127.1+31.7)*43758.5453;return x-Math.floor(x);}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   👋 TAKHMINA — THIS IS YOUR LINE TO OWN (the ownership step).
+   The hydro equation this app runs is  E = ρ · g · h · η · V.
+   Two of those five are engineering choices you get to set:
+     • h  = the dam HEAD, how far the water falls (metres)
+     • η  = the turbine EFFICIENCY, how much of that energy the turbine captures (0–1)
+   Change ONE number below, save this file, reload the page, and press the
+   "Power first" preset + Run — watch the winter-power number move. Then you can
+   explain WHY it moved, in your own words. (Defaults 100 m / 0.90 keep the model
+   matched to the real Aral data; raising η toward 0.95 is a modern-turbine upgrade.)
+   ───────────────────────────────────────────────────────────────────────── */
+const HYDRO = { headMeters: 100, turbineEfficiency: 0.90 };
 
 /* one basin step; returns updated {V,M,Mprec} + derived area,salinity */
 function basinStep(b,inflow,evapFactor,V0,A0){
@@ -670,8 +735,11 @@ function simulate(p){
     else { el('dikeMark'); }
 
     // hydro power: timing of release on the upstream reservoirs (does not consume the water)
+    // E = ρ·g·h·η·V — head h and efficiency η come from the HYDRO block above (Takhmina's line).
+    // kPower is calibrated to the real Aral basin at h=100 m, η=0.90; her change scales it from there.
+    const kPowerEff = P.kPower * (HYDRO.turbineEfficiency/0.90) * (HYDRO.headMeters/100);
     const Rw=p.winterShare*flow;
-    const power=P.kPower*Rw/1000;
+    const power=kPowerEff*Rw/1000;
     // summer water available to fields, and what the fields actually got
     const summerCap=(1-p.winterShare)*flow;
     const delivered=Math.min(irrY,summerCap);
@@ -743,6 +811,7 @@ const PRESETS=[
   {t:'Power first',d:'Winter electricity, food cut.',irr:30,win:85,split:60,warm:20,dike:false},
   {t:'Food first',d:'Maximum cotton. The South pays.',irr:105,win:45,split:80,warm:25,dike:false},
   {t:'Save the North (Kok-Aral)',d:'Dam the strait, spare the Syr Darya.',irr:80,win:45,split:88,warm:25,dike:true},
+  {t:'The steward’s compromise',d:'A worked example: dam on, water shared — beats history.',irr:55,win:55,split:70,warm:20,dike:true},
 ];
 const pbox=el('presets');
 PRESETS.forEach((p,i)=>{const b=document.createElement('button');b.className='preset';b.dataset.i=i;
@@ -1137,6 +1206,67 @@ function copyChallenge(){
 }
 el('mMissions').onclick=()=>setMode(true);
 el('mSandbox').onclick=()=>setMode(false);
+
+/* ================= GUIDED TOUR (coach-marks) ================= */
+const TOUR=[
+ {sel:null, title:'This is Upstream', who:'the whole basin',
+  body:'Central Asia’s water crisis, as a machine you can run. You set the policy on two great rivers; the model plays 50 years forward and shows what it does to the sea, the power, the food, and the people. <b>Four quick steps.</b>'},
+ {sel:'.preset.real', title:'First, watch what really happened', run:()=>{ realBtn.click(); },
+  body:'We just pressed <b>Replay real history</b> for you. Watch the map: the South Aral collapses into a salt desert, and in 2005 the Kok-Aral dam saves the North. The gold dots are the <b>real measured data</b> — the model tracks them.'},
+ {sel:'.sea', title:'The map is the sea',
+  body:'This is the Aral, from satellite. As the water leaves it <b>shrinks and turns salt-white</b>, and a dust haze rises off the bare bed. That dust is real: salt laced with old pesticide, blowing over two million people.'},
+ {sel:'.scorewrap', title:'This is your score to beat',
+  body:'Real history scored low — everything went to cotton, the sea was abandoned. Your job is to do better across <b>four things at once</b>: a living sea, power, food, and clean air for the people downwind.'},
+ {sel:'.deck', title:'Now it’s your turn',
+  body:'Set your <b>own</b> policy here: how much water to pull for the fields, where to grow the cotton, how much to release in winter for power, and whether to <b>build the Kok-Aral dam</b>. Then press <b>▶ Run the years</b>. Try the “steward’s compromise” preset to see a run that beats history.'},
+ {sel:null, title:'That’s the whole game', who:'your move',
+  body:'Pick a <b>Mission</b> at the top for a goal, or switch to <b>Free play</b> and just experiment. There’s no single right answer — that’s the point. Have fun, and try to save both seas.'},
+];
+let tourI=0;
+const veil=el('tourVeil'),hole=el('tourHole'),card=el('tourCard');
+function tourDots(){return TOUR.map((_,i)=>'<i class="'+(i===tourI?'on':'')+'"></i>').join('');}
+function placeTour(){
+  const s=TOUR[tourI];
+  el('tourStepN').textContent='Step '+(tourI+1)+' of '+TOUR.length+(s.who?' · '+s.who:'');
+  el('tourTitle').innerHTML=s.title; el('tourBody').innerHTML=s.body;
+  el('tourDots').innerHTML=tourDots();
+  el('tourBack').style.visibility=tourI===0?'hidden':'visible';
+  el('tourNext').textContent=tourI===TOUR.length-1?'Done':'Next';
+  const target=s.sel?document.querySelector(s.sel):null;
+  if(!target){ // centered card, no spotlight
+    hole.style.opacity='0'; hole.style.width='0'; hole.style.height='0';
+    card.style.top='50%'; card.style.left='50%'; card.style.transform='translate(-50%,-50%)';
+    return;
+  }
+  card.style.transform='none';
+  target.scrollIntoView({behavior:'smooth',block:'center'});
+  setTimeout(()=>{
+    const r=target.getBoundingClientRect(), pad=8;
+    hole.style.opacity='1';
+    hole.style.top=(r.top-pad)+'px'; hole.style.left=(r.left-pad)+'px';
+    hole.style.width=(r.width+pad*2)+'px'; hole.style.height=(r.height+pad*2)+'px';
+    const cw=Math.min(340,window.innerWidth-32), ch=card.offsetHeight||220;
+    let top=r.bottom+14, left=r.left;
+    if(top+ch>window.innerHeight-12) top=Math.max(12,r.top-ch-14);      // flip above
+    if(top+ch>window.innerHeight-12) top=Math.max(12,(window.innerHeight-ch)/2); // center vert
+    left=Math.min(Math.max(12,left),window.innerWidth-cw-12);
+    card.style.top=top+'px'; card.style.left=left+'px';
+  },330);
+}
+function tourGo(i){ tourI=Math.max(0,Math.min(TOUR.length-1,i)); placeTour(); }
+function openTour(){ tourI=0; veil.classList.add('on'); placeTour();
+  try{localStorage.setItem('upstream_tour_done','1');}catch(e){} }
+function closeTour(){ veil.classList.remove('on'); }
+el('tourNext').onclick=()=>{ if(tourI===TOUR.length-1) closeTour(); else tourGo(tourI+1); };
+el('tourBack').onclick=()=>tourGo(tourI-1);
+el('tourSkip').onclick=closeTour;
+el('tourStart').onclick=openTour;
+window.addEventListener('resize',()=>{ if(veil.classList.contains('on')) placeTour(); });
+window.addEventListener('keydown',e=>{ if(!veil.classList.contains('on'))return;
+  if(e.key==='Escape')closeTour(); if(e.key==='ArrowRight')el('tourNext').click(); if(e.key==='ArrowLeft')tourGo(tourI-1); });
+/* auto-open once, for a first-time visitor */
+(function(){ let done=false; try{done=localStorage.getItem('upstream_tour_done')==='1';}catch(e){}
+  if(!done) setTimeout(openTour,650); })();
 
 /* boot the challenge layer (DOM is ready — script is at end of body) */
 (function initChallenge(){
