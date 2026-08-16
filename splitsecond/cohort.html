@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SplitSecond — Cohort Lab</title>
+<style>
+  :root{
+    --bg1:#12002e; --bg2:#1b0140; --card:rgba(255,255,255,.06); --line:rgba(255,255,255,.12);
+    --ink:#f4f1ff; --dim:#b9aee0; --red:#ff5470; --green:#39d98a; --yellow:#ffd166; --purple:#b18cff;
+    --grad:linear-gradient(135deg,#7b5cff,#c04bff 60%,#ff4bb0);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);background:radial-gradient(1200px 700px at 20% -10%,#3a0a72 0%,transparent 60%),
+    linear-gradient(160deg,var(--bg1),var(--bg2));min-height:100vh;padding:26px 18px 80px}
+  .wrap{max-width:980px;margin:0 auto}
+  header.top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap}
+  h1{font-size:26px;margin:0 0 4px;font-weight:800;letter-spacing:.2px}
+  .sub{color:var(--dim);font-size:14px;max-width:640px;line-height:1.5}
+  .langbtn{background:var(--card);border:1px solid var(--line);color:var(--ink);border-radius:999px;
+    padding:8px 16px;font-weight:700;cursor:pointer;font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:18px;
+    backdrop-filter:blur(6px)}
+  .card h2{font-size:16px;margin:0 0 12px;font-weight:700}
+  label.fld{display:block;font-size:12px;color:var(--dim);margin:0 0 5px}
+  input[type=text],input[type=date]{width:100%;padding:11px 12px;border-radius:11px;border:1px solid var(--line);
+    background:rgba(0,0,0,.25);color:var(--ink);font-size:14px}
+  .row3{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+  .btn{background:var(--grad);border:0;color:#fff;border-radius:11px;padding:12px 18px;font-weight:800;
+    cursor:pointer;font-size:14px}
+  .btn.ghost{background:var(--card);border:1px solid var(--line)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .file{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .file input{display:none}
+  .filebtn{background:rgba(0,0,0,.25);border:1px dashed var(--line);color:var(--ink);border-radius:11px;
+    padding:11px 14px;cursor:pointer;font-size:13px}
+  .fname{color:var(--dim);font-size:13px}
+  .hint{color:var(--dim);font-size:12.5px;line-height:1.5;margin-top:10px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .del{color:var(--red);cursor:pointer;font-weight:700;background:none;border:0;font-size:13px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:4px}
+  .tile{background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .tile .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+  .tile .v{font-size:24px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+  .tile .sd{font-size:12px;color:var(--dim);margin-top:2px}
+  .empty{color:var(--dim);font-size:14px;padding:14px 2px}
+  .foot{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1c0640;
+    border:1px solid var(--line);padding:12px 20px;border-radius:999px;font-size:13px;opacity:0;
+    transition:opacity .25s;pointer-events:none}
+  .toast.on{opacity:1}
+  .badge{display:inline-block;background:rgba(255,209,102,.14);color:var(--yellow);border:1px solid rgba(255,209,102,.3);
+    border-radius:999px;padding:3px 10px;font-size:11px;font-weight:700;margin-left:8px}
+  code{background:rgba(0,0,0,.3);padding:2px 6px;border-radius:6px;font-size:12px}
+  @media(max-width:560px){.row3{grid-template-columns:1fr 1fr}.btn.add{grid-column:span 2}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 id="t-title"></h1>
+      <div class="sub" id="t-sub"></div>
+    </div>
+    <button class="langbtn" id="lang">ҚАЗ</button>
+  </header>
+
+  <div class="card">
+    <h2 id="t-add"></h2>
+    <div class="row3">
+      <div>
+        <label class="fld" id="t-name-l"></label>
+        <input type="text" id="pname" autocomplete="off" placeholder="A.S.">
+      </div>
+      <div>
+        <label class="fld" id="t-date-l"></label>
+        <input type="date" id="pdate">
+      </div>
+      <button class="btn add" id="addBtn" disabled></button>
+    </div>
+    <div class="file">
+      <label class="filebtn"><input type="file" id="pfile" accept=".csv,text/csv"><span id="t-file"></span></label>
+      <span class="fname" id="fname"></span>
+    </div>
+    <div class="hint" id="t-hint"></div>
+  </div>
+
+  <div class="card">
+    <h2 id="t-cohort"></h2>
+    <div class="tiles" id="tiles"></div>
+    <div id="rosterWrap"></div>
+    <div class="foot" id="foot" style="display:none">
+      <button class="btn ghost" id="dlData" ></button>
+      <button class="btn ghost" id="dlReport"></button>
+      <button class="del" id="clearAll" style="margin-left:auto"></button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================================
+   SplitSecond — Cohort Lab
+   The Stage-4 IMPACT instrument for the SplitSecond tech project.
+   Each real tester plays SplitSecond, downloads their battery CSV
+   (task,trial,condition,stimulus,response,correct,rt_ms,note) and sends it.
+   The student adds each file here → this computes per-player + group cognitive
+   metrics across the real cohort, and exports one combined tidy dataset + a
+   report. It fabricates nothing: it only reads files real people produced.
+   Pure vanilla JS, no libraries, client-side only (localStorage). Bilingual.
+============================================================================ */
+const KEY='splitsecond-cohort-v1';
+let lang='ru';
+let pendingRows=null, pendingFile='';
+
+const STR={
+  ru:{
+    title:'SplitSecond — Лаборатория когорты',
+    sub:'Инструмент анализа для пилота. Каждый участник проходит SplitSecond, скачивает свой battery CSV и присылает его. Добавьте файл каждого участника, и здесь соберётся реальный набор данных по группе: конфликт-кост Струпа, ошибки торможения, скорость реакции, объём рабочей памяти. Инструмент ничего не выдумывает, он только читает файлы, которые сделали реальные люди.',
+    add:'Добавить участника', nameL:'Инициалы участника', dateL:'Дата прохождения',
+    addBtn:'Добавить', file:'Выбрать battery CSV', hint:'Файл — это <code>splitsecond-battery-...csv</code>, который участник скачал кнопкой «Все данные (CSV)». Данные хранятся только в этом браузере.',
+    cohort:'Когорта', empty:'Пока никого. Добавьте первого реального участника выше.',
+    tN:'Участников', tStroop:'Конфликт-кост Струпа', tGng:'Ошибки торможения (Go/No-Go)', tRt:'Время реакции', tSpan:'Объём памяти',
+    thName:'Участник', thDate:'Дата', thStroop:'Струп, мс', thGng:'Комиссии', thRt:'Реакция, мс', thSpan:'Span', thTrials:'Проб',
+    dlData:'Скачать общий датасет (CSV)', dlReport:'Скачать отчёт', clearAll:'Очистить всё',
+    needFile:'Сначала выберите battery CSV', added:'Участник добавлен', badCsv:'Это не похоже на battery CSV SplitSecond',
+    cleared:'Очищено', removed:'Участник удалён', confirmClear:'Удалить всех участников? Это не тронет присланные файлы.',
+    ms:'мс', na:'—', sd:'СО', avgN:'ср. по группе',
+  },
+  kz:{
+    title:'SplitSecond — Когорта зертханасы',
+    sub:'Пилотқа арналған талдау құралы. Әр қатысушы SplitSecond орындап, өз battery CSV файлын жүктеп жібереді. Әр файлды осында қосыңыз, сонда топ бойынша нақты дерек жиналады: Струп конфликт-косты, тежелу қателері, реакция жылдамдығы, жедел жады көлемі. Құрал ештеңе ойлап таппайды, тек нақты адамдар жасаған файлдарды оқиды.',
+    add:'Қатысушы қосу', nameL:'Қатысушы инициалдары', dateL:'Орындаған күні',
+    addBtn:'Қосу', file:'battery CSV таңдау', hint:'Файл — қатысушы «Барлық деректер (CSV)» батырмасымен жүктеген <code>splitsecond-battery-...csv</code>. Деректер тек осы браузерде сақталады.',
+    cohort:'Когорта', empty:'Әзірге ешкім жоқ. Жоғарыда бірінші нақты қатысушыны қосыңыз.',
+    tN:'Қатысушы', tStroop:'Струп конфликт-косты', tGng:'Тежелу қателері (Go/No-Go)', tRt:'Реакция уақыты', tSpan:'Жады көлемі',
+    thName:'Қатысушы', thDate:'Күні', thStroop:'Струп, мс', thGng:'Комиссия', thRt:'Реакция, мс', thSpan:'Span', thTrials:'Проб',
+    dlData:'Жалпы датасетті жүктеу (CSV)', dlReport:'Есепті жүктеу', clearAll:'Барлығын тазалау',
+    needFile:'Алдымен battery CSV таңдаңыз', added:'Қатысушы қосылды', badCsv:'Бұл SplitSecond battery CSV емес сияқты',
+    cleared:'Тазаланды', removed:'Қатысушы жойылды', confirmClear:'Барлық қатысушыны жою керек пе? Жіберілген файлдарға тимейді.',
+    ms:'мс', na:'—', sd:'СА', avgN:'топ орташасы',
+  }
+};
+const U=()=>STR[lang];
+const $=id=>document.getElementById(id);
+
+/* ---------------- CSV parsing ---------------- */
+function parseCSV(text){
+  const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.length);
+  return lines.map(line=>{
+    const out=[]; let cur='', q=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(q){ if(c==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+      else { if(c===','){out.push(cur);cur='';} else if(c==='"') q=true; else cur+=c; }
+    }
+    out.push(cur); return out;
+  });
+}
+// Return array of {task,condition,correct,rt_ms,note,length} from a battery CSV, or null.
+function readBattery(text){
+  const grid=parseCSV(text);
+  if(!grid.length) return null;
+  const head=grid[0].map(h=>h.trim().toLowerCase());
+  const need=['task','condition','correct','rt_ms'];
+  if(!need.every(h=>head.includes(h))) return null;
+  const ix=n=>head.indexOf(n);
+  const iT=ix('task'), iC=ix('condition'), iOk=ix('correct'), iR=ix('rt_ms'), iN=ix('note');
+  const rows=[];
+  for(let r=1;r<grid.length;r++){
+    const g=grid[r]; if(!g[iT]) continue;
+    const cond=(g[iC]||'').trim();
+    rows.push({
+      task:(g[iT]||'').trim(),
+      condition:cond,
+      correct:(g[iOk]||'').trim()==='1'?1:0,
+      rt:g[iR]===''||g[iR]==null?null:Number(g[iR]),
+      note:iN>=0?(g[iN]||'').trim():'',
+      length:/^len\d+$/.test(cond)?Number(cond.slice(3)):null
+    });
+  }
+  return rows.length?rows:null;
+}
+const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+const sd=a=>{ if(a.length<2)return null; const m=mean(a); return Math.sqrt(a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1)); };
+const r0=x=>x==null?null:Math.round(x);
+
+// Per-player metrics from parsed battery rows.
+function metrics(rows){
+  const m={trials:rows.length, stroop:null, gng:null, rt:null, span:null};
+  const stroop=rows.filter(r=>r.task==='stroop');
+  if(stroop.length){
+    const con=stroop.filter(r=>r.condition==='congruent'&&r.correct&&r.rt!=null).map(r=>r.rt);
+    const inc=stroop.filter(r=>r.condition==='incongruent'&&r.correct&&r.rt!=null).map(r=>r.rt);
+    if(con.length&&inc.length) m.stroop=mean(inc)-mean(con);
+  }
+  const gng=rows.filter(r=>r.task==='gng');
+  if(gng.length){
+    m.gng=gng.filter(r=>r.note==='commission'||(r.condition==='nogo'&&r.correct===0)).length;
+  }
+  const rt=rows.filter(r=>r.task==='reaction'&&r.correct&&r.rt!=null).map(r=>r.rt);
+  if(rt.length) m.rt=mean(rt);
+  const span=rows.filter(r=>r.task==='span'&&r.correct&&r.length!=null).map(r=>r.length);
+  if(span.length) m.span=Math.max(...span);
+  return m;
+}
+
+/* ---------------- state ---------------- */
+function load(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){return [];} }
+function save(a){ localStorage.setItem(KEY, JSON.stringify(a)); }
+
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),1900); }
+
+/* ---------------- render ---------------- */
+function fmt(v,suf){ return v==null?U().na:(r0(v)+(suf||'')); }
+function render(){
+  const roster=load();
+  // cohort tiles
+  const cc=v=>roster.map(p=>p.m[v]).filter(x=>x!=null);
+  const tileRow=(k,arr,suf)=>{
+    const m=mean(arr), s=sd(arr);
+    return `<div class="tile"><div class="k">${k}</div>
+      <div class="v">${m==null?U().na:r0(m)+(suf||'')}</div>
+      <div class="sd">${m==null?('n=0'):('n='+arr.length+(s!=null?' · '+U().sd+' '+r0(s)+(suf||''):''))}</div></div>`;
+  };
+  $('tiles').innerHTML =
+    `<div class="tile"><div class="k">${U().tN}</div><div class="v">${roster.length}</div><div class="sd">${U().avgN}</div></div>`+
+    tileRow(U().tStroop, cc('stroop'), ' '+U().ms)+
+    tileRow(U().tGng, cc('gng'), '')+
+    tileRow(U().tRt, cc('rt'), ' '+U().ms)+
+    tileRow(U().tSpan, cc('span'), '');
+
+  // roster table
+  if(!roster.length){ $('rosterWrap').innerHTML=`<div class="empty">${U().empty}</div>`; $('foot').style.display='none'; return; }
+  let h=`<table><thead><tr><th>${U().thName}</th><th>${U().thDate}</th>
+    <th class="num">${U().thStroop}</th><th class="num">${U().thGng}</th>
+    <th class="num">${U().thRt}</th><th class="num">${U().thSpan}</th><th class="num">${U().thTrials}</th><th></th></tr></thead><tbody>`;
+  roster.forEach((p,i)=>{
+    h+=`<tr><td>${esc(p.name)}</td><td>${esc(p.date)}</td>
+      <td class="num">${fmt(p.m.stroop)}</td><td class="num">${p.m.gng==null?U().na:p.m.gng}</td>
+      <td class="num">${fmt(p.m.rt)}</td><td class="num">${p.m.span==null?U().na:p.m.span}</td>
+      <td class="num">${p.m.trials}</td><td><button class="del" data-i="${i}">✕</button></td></tr>`;
+  });
+  h+='</tbody></table>';
+  $('rosterWrap').innerHTML=h;
+  $('foot').style.display='flex';
+  document.querySelectorAll('.del[data-i]').forEach(b=>b.onclick=()=>{
+    const a=load(); a.splice(+b.dataset.i,1); save(a); render(); toast(U().removed);
+  });
+}
+function esc(s){ return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+
+/* ---------------- add participant ---------------- */
+$('pfile').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const rows=readBattery(String(rd.result));
+    if(!rows){ toast(U().badCsv); pendingRows=null; pendingFile=''; $('fname').textContent=''; checkAdd(); return; }
+    pendingRows=rows; pendingFile=f.name; $('fname').textContent=f.name; checkAdd();
+  };
+  rd.readAsText(f);
+});
+['pname','pdate'].forEach(id=>$(id).addEventListener('input',checkAdd));
+function checkAdd(){ $('addBtn').disabled = !(pendingRows && $('pname').value.trim() && $('pdate').value); }
+$('addBtn').addEventListener('click',()=>{
+  if(!pendingRows){ toast(U().needFile); return; }
+  const a=load();
+  a.push({ name:$('pname').value.trim(), date:$('pdate').value, file:pendingFile,
+           m:metrics(pendingRows), rows:pendingRows });
+  save(a);
+  pendingRows=null; pendingFile=''; $('pname').value=''; $('pdate').value=''; $('pfile').value=''; $('fname').textContent='';
+  checkAdd(); render(); toast(U().added);
+});
+$('clearAll').addEventListener('click',()=>{ if(confirm(U().confirmClear)){ save([]); render(); toast(U().cleared);} });
+
+/* ---------------- exports ---------------- */
+function dl(name,text,type){
+  const b=new Blob([text],{type:type||'text/csv;charset=utf-8'});
+  const u=URL.createObjectURL(b); const a=document.createElement('a');
+  a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),400);
+}
+$('dlData').addEventListener('click',()=>{
+  const roster=load(); if(!roster.length) return;
+  const head=['player','date','task','condition','correct','rt_ms','note','length'];
+  const out=[head];
+  roster.forEach(p=>p.rows.forEach(r=>out.push([
+    csvf(p.name),p.date,r.task,r.condition,r.correct,r.rt==null?'':r.rt,csvf(r.note),r.length==null?'':r.length
+  ])));
+  dl('splitsecond-cohort-dataset.csv', out.map(r=>r.join(',')).join('\n'));
+});
+function csvf(s){ s=String(s??''); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+$('dlReport').addEventListener('click',()=>{
+  const roster=load(); if(!roster.length) return;
+  const cc=v=>roster.map(p=>p.m[v]).filter(x=>x!=null);
+  const line=(lab,arr,suf)=>{ const m=mean(arr),s=sd(arr);
+    return `${lab}: ${m==null?'—':r0(m)+(suf||'')}  (n=${arr.length}${s!=null?', SD '+r0(s)+(suf||''):''})`; };
+  const L=[
+    'SplitSecond — Cohort Report',
+    'Generated: '+new Date().toISOString().slice(0,10),
+    'Participants (real testers): '+roster.length,
+    '',
+    'GROUP METRICS',
+    line('Stroop conflict cost', cc('stroop'), ' ms'),
+    line('Go/No-Go commission errors', cc('gng'), ''),
+    line('Simple reaction time', cc('rt'), ' ms'),
+    line('Digit span', cc('span'), ''),
+    '',
+    'PER-PARTICIPANT',
+    ...roster.map(p=>`${p.name}  ${p.date}  |  Stroop ${p.m.stroop==null?'—':r0(p.m.stroop)+'ms'}  Commission ${p.m.gng??'—'}  RT ${p.m.rt==null?'—':r0(p.m.rt)+'ms'}  Span ${p.m.span??'—'}  (${p.m.trials} trials)`),
+    '',
+    'Notes: metrics are computed from each tester\'s own battery CSV. Reference bands shown in the app are approximate (general literature), not diagnostic.'
+  ];
+  dl('splitsecond-cohort-report.txt', L.join('\n'), 'text/plain;charset=utf-8');
+});
+
+/* ---------------- language + boot ---------------- */
+function applyLang(){
+  const u=U();
+  $('t-title').textContent=u.title; $('t-sub').textContent=u.sub;
+  $('t-add').textContent=u.add; $('t-name-l').textContent=u.nameL; $('t-date-l').textContent=u.dateL;
+  $('addBtn').textContent=u.addBtn; $('t-file').textContent=u.file; $('t-hint').innerHTML=u.hint;
+  $('t-cohort').textContent=u.cohort; $('dlData').textContent=u.dlData; $('dlReport').textContent=u.dlReport;
+  $('clearAll').textContent=u.clearAll; $('lang').textContent = lang==='ru'?'ҚАЗ':'РУС';
+  document.documentElement.lang=lang;
+  render();
+}
+$('lang').addEventListener('click',()=>{ lang=lang==='ru'?'kz':'ru'; applyLang(); });
+applyLang();
+
+/* test hooks (used only for in-browser verification; not part of the UI) */
+window.__cohort={parseCSV,readBattery,metrics,mean,sd,load,save};
+</script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Focus Tracker — Cohort Report</title>
+<style>
+  :root{
+    --bg1:#0f1226; --bg2:#171a3a; --card:rgba(255,255,255,.055); --line:rgba(255,255,255,.12);
+    --ink:#eef0ff; --dim:#a8adcf; --a:#7b8cff; --b:#c07bff; --c:#ff7bb0; --good:#4fd6a3; --warn:#ffcc66;
+    --grad:linear-gradient(135deg,#6a7bff,#a45cff 55%,#ff5ca0);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink);
+    background:radial-gradient(1100px 600px at 15% -10%,#2a2f6e 0%,transparent 60%),linear-gradient(160deg,var(--bg1),var(--bg2));
+    min-height:100vh;padding:26px 18px 80px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px;font-weight:800}
+  .sub{color:var(--dim);font-size:14px;max-width:660px;line-height:1.5}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-top:18px;backdrop-filter:blur(6px)}
+  .card h2{font-size:16px;margin:0 0 12px;font-weight:700}
+  label.fld{display:block;font-size:12px;color:var(--dim);margin:0 0 5px}
+  input[type=text],input[type=date]{width:100%;padding:11px 12px;border-radius:11px;border:1px solid var(--line);
+    background:rgba(0,0,0,.28);color:var(--ink);font-size:14px}
+  .row3{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+  .btn{background:var(--grad);border:0;color:#fff;border-radius:11px;padding:12px 18px;font-weight:800;cursor:pointer;font-size:14px}
+  .btn.ghost{background:var(--card);border:1px solid var(--line)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .file{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+  .file input{display:none}
+  .filebtn{background:rgba(0,0,0,.28);border:1px dashed var(--line);color:var(--ink);border-radius:11px;padding:11px 14px;cursor:pointer;font-size:13px}
+  .fname{color:var(--dim);font-size:13px}
+  .hint{color:var(--dim);font-size:12.5px;line-height:1.5;margin-top:10px}
+  code{background:rgba(0,0,0,.3);padding:2px 6px;border-radius:6px;font-size:12px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:4px}
+  .tile{background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .tile .k{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+  .tile .v{font-size:24px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+  .tile .sd{font-size:12px;color:var(--dim);margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.4px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .del{color:var(--c);cursor:pointer;font-weight:700;background:none;border:0;font-size:13px}
+  .empty{color:var(--dim);font-size:14px;padding:14px 2px}
+  .foot{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1a1d40;border:1px solid var(--line);
+    padding:12px 20px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none}
+  .toast.on{opacity:1}
+  .subj{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px}
+  .chip b{color:var(--a)}
+  @media(max-width:560px){.row3{grid-template-columns:1fr 1fr}.btn.add{grid-column:span 2}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Focus Tracker — Cohort Report</h1>
+  <div class="sub">The delivery-evidence instrument for the pilot. Each tester exports their <b>JSON backup</b> from the app (Backup button) and sends it. Add each file below to build the real cohort dataset: how many people actually kept using it, their streaks, minutes logged, and which subjects. It fabricates nothing — it only reads the backups real testers produced.</div>
+
+  <div class="card">
+    <h2>Add a tester</h2>
+    <div class="row3">
+      <div><label class="fld">Tester name / initials</label><input type="text" id="pname" autocomplete="off" placeholder="M.T."></div>
+      <div><label class="fld">Date they sent it</label><input type="date" id="pdate"></div>
+      <button class="btn add" id="addBtn" disabled>Add</button>
+    </div>
+    <div class="file">
+      <label class="filebtn"><input type="file" id="pfile" accept=".json,application/json"><span>Choose backup JSON</span></label>
+      <span class="fname" id="fname"></span>
+    </div>
+    <div class="hint">The file is a <code>focus-tracker-backup-....json</code> the tester downloaded with the app's <b>Backup</b> button. Data stays only in this browser.</div>
+  </div>
+
+  <div class="card">
+    <h2>Cohort</h2>
+    <div class="tiles" id="tiles"></div>
+    <div class="subj" id="subj"></div>
+    <div id="rosterWrap"></div>
+    <div class="foot" id="foot" style="display:none">
+      <button class="btn ghost" id="dlData">Download combined dataset (CSV)</button>
+      <button class="btn ghost" id="dlReport">Download report</button>
+      <button class="del" id="clearAll" style="margin-left:auto">Clear all</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================================
+   Focus Tracker — Cohort Report
+   Stage-4 DELIVERY / IMPACT instrument. Each real tester exports a JSON backup
+   { app:"focus-tracker", sessions:[{date,subject,minutes}], settings } and sends
+   it. The student adds each file here → this computes per-tester + cohort
+   sustained-use metrics and exports one combined dataset + a report.
+   Fabricates nothing: it only reads backups real testers made.
+   Vanilla JS, no libraries, client-side only. Streak math mirrors the app.
+============================================================================ */
+const KEY='focus-cohort-v1';
+let pending=null, pendingFile='';
+const $=id=>document.getElementById(id);
+const SUSTAINED_DAYS=14; // "kept using it": active on >=2 distinct days AND a use-span of >=14 days
+
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),1900); }
+function load(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch(e){return [];} }
+function save(a){ localStorage.setItem(KEY,JSON.stringify(a)); }
+
+/* ---- date + stats helpers (mirror the app) ---- */
+const dayIndex=ds=>Math.floor(Date.parse(ds+'T00:00:00Z')/86400000);
+function computeStreaks(sessions){
+  const days=[...new Set(sessions.map(e=>dayIndex(e.date)))].sort((a,b)=>a-b);
+  if(!days.length) return {current:0,best:0};
+  let best=1,run=1;
+  for(let i=1;i<days.length;i++){ if(days[i]===days[i-1]+1){run++; best=Math.max(best,run);} else run=1; }
+  const today=Math.floor(Date.now()/86400000);
+  let cur=0;
+  if(days[days.length-1]===today||days[days.length-1]===today-1){
+    cur=1; for(let i=days.length-1;i>0;i--){ if(days[i]===days[i-1]+1) cur++; else break; }
+  }
+  return {current:cur,best:best};
+}
+const sum=a=>a.reduce((x,y)=>x+y,0);
+const mean=a=>a.length?sum(a)/a.length:null;
+const median=a=>{ if(!a.length)return null; const s=[...a].sort((x,y)=>x-y); const m=s.length>>1; return s.length%2?s[m]:(s[m-1]+s[m])/2; };
+const r0=x=>x==null?null:Math.round(x);
+
+function metrics(backup){
+  const S=(backup.sessions||[]).filter(e=>e&&e.date&&typeof e.minutes==='number');
+  const days=new Set(S.map(e=>e.date));
+  const idx=[...new Set(S.map(e=>dayIndex(e.date)))].sort((a,b)=>a-b);
+  const span=idx.length?(idx[idx.length-1]-idx[0]+1):0;
+  const totalMin=sum(S.map(e=>e.minutes));
+  const {current,best}=computeStreaks(S);
+  const subj={}; S.forEach(e=>{ const k=(e.subject||'Study'); subj[k]=(subj[k]||0)+e.minutes; });
+  const sustained = days.size>=2 && span>=SUSTAINED_DAYS;
+  return { sessions:S.length, activeDays:days.size, spanDays:span, totalMin, current, best, subj, sustained,
+           first:idx.length?S.map(e=>e.date).sort()[0]:'', last:idx.length?S.map(e=>e.date).sort().slice(-1)[0]:'' };
+}
+function readBackup(text){
+  let d; try{ d=JSON.parse(text); }catch(e){ return null; }
+  if(!d||!Array.isArray(d.sessions)) return null;
+  if(d.app && d.app!=='focus-tracker') return null;
+  return d;
+}
+
+/* ---- render ---- */
+function esc(s){ return String(s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])); }
+function render(){
+  const R=load();
+  const tot=v=>R.map(p=>p.m[v]);
+  const sustainedN=R.filter(p=>p.m.sustained).length;
+  $('tiles').innerHTML=
+    tile('Testers',R.length,'')+
+    tile('Kept using it',sustainedN, R.length?('of '+R.length+' · ≥2 days, ≥'+SUSTAINED_DAYS+'d span'):'')+
+    tile('Total minutes',R.length?r0(sum(tot('totalMin'))):'—', R.length?(Math.round(sum(tot('totalMin'))/60)+' h focused'):'')+
+    tile('Median best streak',R.length?r0(median(tot('best')))+'d':'—', R.length?('mean '+r0(mean(tot('best')))+'d'):'')+
+    tile('Median active days',R.length?r0(median(tot('activeDays'))):'—','per tester');
+  // subject roll-up
+  const agg={}; R.forEach(p=>Object.entries(p.m.subj).forEach(([k,v])=>agg[k]=(agg[k]||0)+v));
+  const top=Object.entries(agg).sort((a,b)=>b[1]-a[1]);
+  $('subj').innerHTML = top.length? top.map(([k,v])=>`<span class="chip">${esc(k)} <b>${r0(v)}m</b></span>`).join(''):'';
+
+  if(!R.length){ $('rosterWrap').innerHTML='<div class="empty">No testers yet. Add the first real backup above.</div>'; $('foot').style.display='none'; return; }
+  let h=`<table><thead><tr><th>Tester</th><th>Sent</th><th class="num">Sessions</th><th class="num">Active days</th>
+    <th class="num">Use span</th><th class="num">Minutes</th><th class="num">Best streak</th><th>Kept?</th><th></th></tr></thead><tbody>`;
+  R.forEach((p,i)=>{ const m=p.m;
+    h+=`<tr><td>${esc(p.name)}</td><td>${esc(p.date)}</td><td class="num">${m.sessions}</td>
+      <td class="num">${m.activeDays}</td><td class="num">${m.spanDays}d</td><td class="num">${r0(m.totalMin)}</td>
+      <td class="num">${m.best}d</td><td>${m.sustained?'✅':'—'}</td>
+      <td><button class="del" data-i="${i}">✕</button></td></tr>`; });
+  h+='</tbody></table>';
+  $('rosterWrap').innerHTML=h; $('foot').style.display='flex';
+  document.querySelectorAll('.del[data-i]').forEach(b=>b.onclick=()=>{ const a=load(); a.splice(+b.dataset.i,1); save(a); render(); toast('Tester removed'); });
+}
+function tile(k,v,sd){ return `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="sd">${sd||''}</div></div>`; }
+
+/* ---- add ---- */
+$('pfile').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ const d=readBackup(String(rd.result));
+    if(!d){ toast("That isn't a Focus Tracker backup"); pending=null; pendingFile=''; $('fname').textContent=''; check(); return; }
+    pending=d; pendingFile=f.name; $('fname').textContent=f.name; check();
+  };
+  rd.readAsText(f);
+});
+['pname','pdate'].forEach(id=>$(id).addEventListener('input',check));
+function check(){ $('addBtn').disabled=!(pending && $('pname').value.trim() && $('pdate').value); }
+$('addBtn').addEventListener('click',()=>{
+  if(!pending) return;
+  const a=load();
+  a.push({ name:$('pname').value.trim(), date:$('pdate').value, file:pendingFile, m:metrics(pending), sessions:pending.sessions });
+  save(a);
+  pending=null; pendingFile=''; $('pname').value=''; $('pdate').value=''; $('pfile').value=''; $('fname').textContent=''; check(); render(); toast('Tester added');
+});
+$('clearAll').addEventListener('click',()=>{ if(confirm('Remove all testers? Files you were sent are untouched.')){ save([]); render(); toast('Cleared'); } });
+
+/* ---- exports ---- */
+function dl(name,text,type){ const b=new Blob([text],{type:type||'text/csv;charset=utf-8'});
+  const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),400); }
+function csvf(s){ s=String(s??''); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }
+$('dlData').addEventListener('click',()=>{
+  const R=load(); if(!R.length) return;
+  const head=['tester','sent_date','session_date','subject','minutes']; const out=[head];
+  R.forEach(p=>(p.sessions||[]).forEach(s=>out.push([csvf(p.name),p.date,s.date,csvf(s.subject||'Study'),s.minutes])));
+  dl('focus-tracker-cohort-dataset.csv', out.map(r=>r.join(',')).join('\n'));
+});
+$('dlReport').addEventListener('click',()=>{
+  const R=load(); if(!R.length) return;
+  const tot=v=>R.map(p=>p.m[v]);
+  const L=[
+    'Focus Tracker — Cohort Report',
+    'Generated: '+new Date().toISOString().slice(0,10),
+    'Testers (real): '+R.length,
+    'Kept using it (>=2 days, >='+SUSTAINED_DAYS+'d span): '+R.filter(p=>p.m.sustained).length,
+    'Total focused minutes across cohort: '+r0(sum(tot('totalMin')))+' ('+Math.round(sum(tot('totalMin'))/60)+' h)',
+    'Median best streak: '+r0(median(tot('best')))+' days (mean '+r0(mean(tot('best')))+')',
+    'Median active days: '+r0(median(tot('activeDays'))),
+    '',
+    'PER-TESTER',
+    ...R.map(p=>`${p.name}  sent ${p.date}  |  ${p.m.sessions} sessions, ${p.m.activeDays} active days over ${p.m.spanDays}d, ${r0(p.m.totalMin)} min, best streak ${p.m.best}d${p.m.sustained?'  [kept using it]':''}`),
+    '',
+    'Notes: all figures are computed from each tester\'s own exported backup. "Kept using it" is a conservative sustained-use flag, not a claim of daily use.'
+  ];
+  dl('focus-tracker-cohort-report.txt', L.join('\n'), 'text/plain;charset=utf-8');
+});
+
+window.__cohort={dayIndex,computeStreaks,metrics,readBackup,median,mean,load,save};
+render();
+</script>
+</body>
+</html>
