@@ -191,7 +191,15 @@ function renderChainNudge() {
     msg = "👋 Run one focus session to start your chain. The whole idea: don't break it.";
     cls = "welcome";
   } else if (studiedToday) {
-    msg = current > 1 ? `🔥 ${current}-day streak, and today is done. Chain unbroken.` : "✅ Studied today. Come back tomorrow to start a streak.";
+    const goal = getSettings().goal;
+    const todayMin = todayStats(sessions).minutes;
+    if (goal > 0 && todayMin >= goal) {
+      msg = current > 1
+        ? `🎉 Goal hit today (${todayMin}/${goal} min) — ${current}-day streak. Reward yourself, you earned it.`
+        : `🎉 Goal hit today (${todayMin}/${goal} min). Reward yourself, you earned it.`;
+    } else {
+      msg = current > 1 ? `🔥 ${current}-day streak, and today is done. Chain unbroken.` : "✅ Studied today. Come back tomorrow to start a streak.";
+    }
     cls = "safe";
   } else if (current >= 1) {
     msg = `🔥 ${current} days in a row so far — that's real progress. Don't lose it: one focus session today keeps the chain.`;
@@ -371,8 +379,14 @@ function resetIdle() {
 function afterLog(minutes, subject, verb) {
   renderAll();
   const { current } = computeStreaks(getSessions());
+  const goal = getSettings().goal;
+  const todayMin = todayStats(getSessions()).minutes;
+  // did THIS session push today's total across the daily goal for the first time today?
+  const hitGoalNow = goal > 0 && todayMin >= goal && (todayMin - minutes) < goal;
   if (STREAK_MILESTONES.includes(current)) {
-    toast(`🏆 ${current}-day streak! You didn't break the chain.`);
+    toast(`🏆 ${current}-day streak! You didn't break the chain. Celebrate it 🎉`);
+  } else if (hitGoalNow) {
+    toast(`🎉 Goal reached — ${todayMin} min today. Reward yourself!`);
   } else {
     toast(`${verb} ${minutes}m of ${subject} · ${current}-day streak`);
   }
